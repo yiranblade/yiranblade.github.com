@@ -39,15 +39,14 @@
 <main class="content" role="main">
   <article class="post">
     <span class="post-meta">
-      <time datetime="2019-02-21T09:01:05.881Z" itemprop="datePublished">
+      <time datetime="2019-02-21T09:07:11.121Z" itemprop="datePublished">
           2019-02-21
       </time>
     
 </span>
     <h1 class="post-title"></h1>
     <section class="post-content">
-      <h1 id="go语言读书笔记之反射"><a href="#go语言读书笔记之反射" class="headerlink" title="go语言读书笔记之反射"></a>go语言读书笔记之反射</h1><p>标签（空格分隔）： go语言圣经</p>
-<hr>
+      <h1 id="go语言读书笔记之反射"><a href="#go语言读书笔记之反射" class="headerlink" title="go语言读书笔记之反射"></a>go语言读书笔记之反射</h1><hr>
 <p>能够在运行时更新变量和检查它们的值、调用它们的方法和它们支持的内在操作，而不需要在编译时就知道这些变量的具体类型。这种机制被称为反射。go语言中对于反射的定义与java中并无太大差别，基本核心都是在运行时更新变量调用方法之类的。<br>换句话说就是反射允许在编译期间不知道变量或者接口的名称，字段、方法，值的情况下在运行时检查类、接口字段和方法以及他们的值。</p>
 <h2 id="go中的反射"><a href="#go中的反射" class="headerlink" title="go中的反射"></a>go中的反射</h2><p>go中的反射主要由reflect包来提供。其定义两个比较重要的类型，Type与Value，一个type表示一个go类型。<br>其拥有一个函数typeof,该函数接受人意的interface{}类型，并以reflect.Type形式返回动态类型：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">t := reflext.Typeof(3)</span><br></pre></td></tr></table></figure></p>
 <p>在调用typeof函数的过程中，其会将一个具体的值转换为接口类型，并且拥有一个隐式的接口转换操作，创建包含两个信息的接口值：操作数的动态类型和其动态值。<br>em…还有一个比较重要的类型是刚才说到的Value，函数reflect.ValueOf接受任意的interface{}类型，并返回一个装载着其动态值的reflexct.Value和reflect.TypeOf类似，reflect。.ValueOf返回的结构也是具体的类型，但是reflect.Value也可以持有一个接口值.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v := reflect.ValueOf(3)</span><br></pre></td></tr></table></figure></p>
@@ -114,10 +113,6 @@
   <nav class="pagination" role="pagination">
     
     <span class="page-number">•</span>
-    
-    <a class="older-posts" href="/2019/02/20/heelo/">
-        heelo →
-    </a>
     
 </nav>
   <div id="comment" class="comments-area">
