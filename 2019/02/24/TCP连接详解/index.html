@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <title>TCP连接详解 | yiranblade&#39;s blog</title>
+  <meta name="description" content="" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Noto+Serif:400,700,400italic|Open+Sans:700,400" />
+
+  <meta name="generator" content="yiranblade's blog">
+
+  
+  
+  
+
+  
+</head>
+
+
+<body class="post-template">
+
+  <header class="site-head" style="background-image: url(//github.com/yiranblade/yiranblade.github.io/blob/master/image/miao1.jpg?raw=true)">
+    <div class="vertical">
+        <div class="site-head-content inner">
+             <a class="blog-logo" href="/"><img src="//timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1550662707158&di=cbe3e6f18206a4d6f1e7bbd1b8fb2d81&imgtype=0&src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201408%2F29%2F20140829092016_cvJRe.jpeg" alt="Blog Logo"></a> 
+            <h1 class="blog-title">yiranblade's blog</h1>
+            <h2 class="blog-description"></h2>
+        </div>
+    </div>
+</header>
+  
+
+<main class="content" role="main">
+  <article class="post">
+    <span class="post-meta">
+      <time datetime="2019-02-24T03:33:40.674Z" itemprop="datePublished">
+          2019-02-24
+      </time>
+    
+</span>
+    <h1 class="post-title">TCP连接详解</h1>
+    <section class="post-content">
+      <p>##三次握手：<br>（1）服务器必须准备好接受连接。通常通过调用socket、bind和listen这3个函数完成，这被称为被动打开。<br>（2）客户通过调用connect发起主动打开。这导致客户tcp发送一个syn（同步）分节，它会告诉服务器客户将在连接中发送的数据的初始序列号。通常syn分节不携带数据，其所在ip数据报hozhi只含有一个ip首部、一个tcp首部及可能有的tcp选项。<br>（3）服务器必须确认客户（ack acknowledge）d的syn，同事自己也要发送一个syn分节，它含有服务器将在同一个连接中发送的数据的初始序列号。服务器将在单个分节中发送syn和对客户syn的ack（确认）。<br>（4）客户必须确认服务器的syn哦。<br>这种交换需要三个分组，所以被称为tcp的三次握手。</p>
+<h2 id="四次挥手："><a href="#四次挥手：" class="headerlink" title="四次挥手："></a>四次挥手：</h2><p>（1）某个应用进程首先调用close，我们称该端执行主动关闭。该端的TCP于是发送一个fin分节，表示数据发送完毕。<br>（2）接收到这个fin的对端执行被动关闭。这个fin由tcp确认。它的接收也作为一个文件结束符传递给接收端应用进程，fin的接收意味着接收端应用进程在相应连接上再无额外数据可接收。<br>（3）一段时间后，接收到这个文件结束符的应用进程将调用close关闭它的套接字。这导致它的tcp也发送一个fin。<br>（4）接收这个最终fin的愿发送端tcp确认这个fin。</p>
+<h2 id="tcp连接过程中的状态转移"><a href="#tcp连接过程中的状态转移" class="headerlink" title="tcp连接过程中的状态转移"></a>tcp连接过程中的状态转移</h2><p>tcp为一个连接定义了11种状态，且tcp规则规定如何基于当前状态及在该状态下所接收的分节从一个状态转换到另一个状态。<br>在此说明下：<br><img src="http://static.zybuluo.com/yiranblade/9xl6j1x2fuff5x4z3joodvpm/image.png" alt="image.png-510.5kB"><br>对于一个经典的断开操作其示意图如下：<br><img src="http://static.zybuluo.com/yiranblade/3luaqmf17dfvlnoynv7e4f1s/image.png" alt="image.png-108.9kB"></p>
+<p>##TTIME_WAIT状态<br>一般执行主动关闭的一端会经历这个状态，该端停留在该状态的持续时间是最长分节生命期的两倍,2MSL。<br>TIME_WAIT状态有两个存在的理由：<br>（1）可靠地实现TCP全双工连接的终止；<br>（2）允许老的重复分节在网络中消逝。<br>第一个理由是，假设在四次挥手最后的ack丢失，那么发起端就必须重新发送ack。第二个则是，tcp必须防止来自某个连接的老的重复分组在该连接已终止后再现，从而被误解成属于同一连接的某个新的化身。而tcp不会给处于time_wait状态的连接发起新的化身。而time_wait状态的持续时间是msl的2倍，所以无论哪个方向的分组将最多存活msl秒后即被丢弃，这样就可以保证每成功建议一个tcp连接时。来自该连接先前化身的老的重复分组都已在网络中消逝了。</p>
+
+    </section>
+    <footer class="post-footer">
+      <section class="author">
+    <h4></h4>
+    <p></p>
+</section>
+      <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?url=http://yoursite.com/2019/02/24/TCP连接详解/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://yoursite.com/2019/02/24/TCP连接详解/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://yoursite.com/2019/02/24/TCP连接详解/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        <span class="hidden">Google+</span>
+    </a>
+</section>
+    </footer>
+  </article>
+  <nav class="pagination" role="pagination">
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2019/02/21/go语言读书笔记之反射/">
+        go语言读书笔记之反射 →
+    </a>
+    
+</nav>
+  <div id="comment" class="comments-area">
+    <h1 class="title"><a href="#disqus_comments" name="disqus_comments">Comments</a></h1>
+
+    
+</div>
+</main>
+
+
+  
+<footer class="site-footer">
+  
+  <div class="inner">
+     <section class="copyright">All content copyright <a href="/">yiranblade's blog</a> &copy; 2014 &bull; All rights reserved.</section>
+     <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://zespia.tw/hexo/">Hexo</a></section>
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script type="text/javascript" src="/js/jquery.fitvids.js"></script>
+<script type="text/javascript" src="/js/index.js"></script>
+
+
+
+
+
+
+</body>
+</html>
