@@ -46,7 +46,7 @@
 </span>
     <h1 class="post-title">TCP连接详解</h1>
     <section class="post-content">
-      <p>##三次握手：<br>（1）服务器必须准备好接受连接。通常通过调用socket、bind和listen这3个函数完成，这被称为被动打开。<br>（2）客户通过调用connect发起主动打开。这导致客户tcp发送一个syn（同步）分节，它会告诉服务器客户将在连接中发送的数据的初始序列号。通常syn分节不携带数据，其所在ip数据报hozhi只含有一个ip首部、一个tcp首部及可能有的tcp选项。<br>（3）服务器必须确认客户（ack acknowledge）d的syn，同事自己也要发送一个syn分节，它含有服务器将在同一个连接中发送的数据的初始序列号。服务器将在单个分节中发送syn和对客户syn的ack（确认）。<br>（4）客户必须确认服务器的syn哦。<br>这种交换需要三个分组，所以被称为tcp的三次握手。</p>
+      <h2 id="三次握手："><a href="#三次握手：" class="headerlink" title="三次握手："></a>三次握手：</h2><p>（1）服务器必须准备好接受连接。通常通过调用socket、bind和listen这3个函数完成，这被称为被动打开。<br>（2）客户通过调用connect发起主动打开。这导致客户tcp发送一个syn（同步）分节，它会告诉服务器客户将在连接中发送的数据的初始序列号。通常syn分节不携带数据，其所在ip数据报hozhi只含有一个ip首部、一个tcp首部及可能有的tcp选项。<br>（3）服务器必须确认客户（ack acknowledge）d的syn，同事自己也要发送一个syn分节，它含有服务器将在同一个连接中发送的数据的初始序列号。服务器将在单个分节中发送syn和对客户syn的ack（确认）。<br>（4）客户必须确认服务器的syn哦。<br>这种交换需要三个分组，所以被称为tcp的三次握手。</p>
 <h2 id="四次挥手："><a href="#四次挥手：" class="headerlink" title="四次挥手："></a>四次挥手：</h2><p>（1）某个应用进程首先调用close，我们称该端执行主动关闭。该端的TCP于是发送一个fin分节，表示数据发送完毕。<br>（2）接收到这个fin的对端执行被动关闭。这个fin由tcp确认。它的接收也作为一个文件结束符传递给接收端应用进程，fin的接收意味着接收端应用进程在相应连接上再无额外数据可接收。<br>（3）一段时间后，接收到这个文件结束符的应用进程将调用close关闭它的套接字。这导致它的tcp也发送一个fin。<br>（4）接收这个最终fin的愿发送端tcp确认这个fin。</p>
 <h2 id="tcp连接过程中的状态转移"><a href="#tcp连接过程中的状态转移" class="headerlink" title="tcp连接过程中的状态转移"></a>tcp连接过程中的状态转移</h2><p>tcp为一个连接定义了11种状态，且tcp规则规定如何基于当前状态及在该状态下所接收的分节从一个状态转换到另一个状态。<br>在此说明下：<br><img src="http://static.zybuluo.com/yiranblade/9xl6j1x2fuff5x4z3joodvpm/image.png" alt="image.png-510.5kB"><br>对于一个经典的断开操作其示意图如下：<br><img src="http://static.zybuluo.com/yiranblade/3luaqmf17dfvlnoynv7e4f1s/image.png" alt="image.png-108.9kB"></p>
 <p>##TTIME_WAIT状态<br>一般执行主动关闭的一端会经历这个状态，该端停留在该状态的持续时间是最长分节生命期的两倍,2MSL。<br>TIME_WAIT状态有两个存在的理由：<br>（1）可靠地实现TCP全双工连接的终止；<br>（2）允许老的重复分节在网络中消逝。<br>第一个理由是，假设在四次挥手最后的ack丢失，那么发起端就必须重新发送ack。第二个则是，tcp必须防止来自某个连接的老的重复分组在该连接已终止后再现，从而被误解成属于同一连接的某个新的化身。而tcp不会给处于time_wait状态的连接发起新的化身。而time_wait状态的持续时间是msl的2倍，所以无论哪个方向的分组将最多存活msl秒后即被丢弃，这样就可以保证每成功建议一个tcp连接时。来自该连接先前化身的老的重复分组都已在网络中消逝了。</p>
@@ -72,6 +72,10 @@
     </footer>
   </article>
   <nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/">
+        ← go语言读书笔记-action系列（一个简单的go程序）
+    </a>
     
     <span class="page-number">•</span>
     

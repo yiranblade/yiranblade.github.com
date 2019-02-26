@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <title>go语言读书笔记-action系列（一个简单的go程序） | yiranblade&#39;s blog</title>
+  <meta name="description" content="" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Noto+Serif:400,700,400italic|Open+Sans:700,400" />
+
+  <meta name="generator" content="yiranblade's blog">
+
+  
+  
+  
+
+  
+</head>
+
+
+<body class="post-template">
+
+  <header class="site-head" style="background-image: url(//github.com/yiranblade/yiranblade.github.io/blob/master/image/miao1.jpg?raw=true)">
+    <div class="vertical">
+        <div class="site-head-content inner">
+             <a class="blog-logo" href="/"><img src="//timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1550662707158&di=cbe3e6f18206a4d6f1e7bbd1b8fb2d81&imgtype=0&src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201408%2F29%2F20140829092016_cvJRe.jpeg" alt="Blog Logo"></a> 
+            <h1 class="blog-title">yiranblade's blog</h1>
+            <h2 class="blog-description"></h2>
+        </div>
+    </div>
+</header>
+  
+
+<main class="content" role="main">
+  <article class="post">
+    <span class="post-meta">
+      <time datetime="2019-02-26T13:15:03.703Z" itemprop="datePublished">
+          2019-02-26
+      </time>
+    
+</span>
+    <h1 class="post-title">go语言读书笔记-action系列（一个简单的go程序）</h1>
+    <section class="post-content">
+      <p>action系列的书感觉还是挺经典的，入手后直接跳过第一章介绍，从第二章开始。在第二章中，其主要以一个搜索的小demo来整体回顾了下go的基础语法，以及鲜明特性，通道，携程之类的，顺读下来感觉对于之前读圣经积累下来的基础是一个十分不错的回顾。</p>
+<h2 id="快速开始一个go程序"><a href="#快速开始一个go程序" class="headerlink" title="快速开始一个go程序"></a>快速开始一个go程序</h2><p>书中的demo是一个从不同数据源中进行搜索的程序，其实现了json与rss这两种格式的读取与搜索，程序的整体架构如下：<br><img src="http://static.zybuluo.com/yiranblade/cyys3bjkuc07sxy558jlc0ch/image_1d4ku4v57nbldgti1b6eb1aok9.png" alt="image_1d4ku4v57nbldgti1b6eb1aok9.png-144.6kB"><br>程序的目录结构分为data，matchers,search三个部分，main一贯作为程序的主入口执行整个程序。<br>从中get到的新的点，感觉就是对于init的使用，预先在各个包中初始化matcher的类型，感觉就像传统面向对象的初始化工厂对象一样。以及对于接口的绑定感觉很有意思，像php，java等对于接口都要使用关键字implements强实现，而go不同，任何一个struct只要绑定了对应方法那么就可以视为其实现了该对象就可以对其赋值，这种弱关联性，对于习惯了php，java那种写法的方式一开始kennel会感觉很不适应但是习惯了，真的感觉很nice，程序写起来就有种用最少的组件做最多的事情的感觉，唯一不爽的就还是觉得代码可读性，没java那么的高，也可能是我习惯了java。</p>
+<h2 id="接口的赋值"><a href="#接口的赋值" class="headerlink" title="接口的赋值"></a>接口的赋值</h2><p>对于一个绑定方法结构体，如果其传入是值的话，则其接口引用类型无论是值还是指针都可以直接调用方法。如果传入的是指针的话，就只可以在接口引用类型是指针的情况下进行方法调用。举例如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 方法声明为使用指向 defaultMatcher 类型值的指针作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = dm // 将值赋值给接口类型 matcher.Search(feed, "test") // 使用值来调用接口方法</span><br><span class="line">&gt; <span class="keyword">go</span> build</span><br><span class="line">cannot use dm (<span class="keyword">type</span> defaultMatcher) as <span class="keyword">type</span> Matcher in assignment</span><br><span class="line"><span class="comment">// 方法声明为使用 defaultMatcher 类型的值作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = &amp;dm // 将指针赋值给接口类型 matcher.Search(feed, "test") // 使用指针来调用接口方法</span><br></pre></td></tr></table></figure></p>
+
+    </section>
+    <footer class="post-footer">
+      <section class="author">
+    <h4></h4>
+    <p></p>
+</section>
+      <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?url=http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        <span class="hidden">Google+</span>
+    </a>
+</section>
+    </footer>
+  </article>
+  <nav class="pagination" role="pagination">
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2019/02/24/TCP连接详解/">
+        TCP连接详解 →
+    </a>
+    
+</nav>
+  <div id="comment" class="comments-area">
+    <h1 class="title"><a href="#disqus_comments" name="disqus_comments">Comments</a></h1>
+
+    
+</div>
+</main>
+
+
+  
+<footer class="site-footer">
+  
+  <div class="inner">
+     <section class="copyright">All content copyright <a href="/">yiranblade's blog</a> &copy; 2014 &bull; All rights reserved.</section>
+     <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://zespia.tw/hexo/">Hexo</a></section>
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script type="text/javascript" src="/js/jquery.fitvids.js"></script>
+<script type="text/javascript" src="/js/index.js"></script>
+
+
+
+
+
+
+</body>
+</html>
