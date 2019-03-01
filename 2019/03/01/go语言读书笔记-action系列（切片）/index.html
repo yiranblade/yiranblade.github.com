@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <title>go语言读书笔记-action系列（切片） | yiranblade&#39;s blog</title>
+  <meta name="description" content="" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Noto+Serif:400,700,400italic|Open+Sans:700,400" />
+
+  <meta name="generator" content="yiranblade's blog">
+
+  
+  
+  
+
+  
+</head>
+
+
+<body class="post-template">
+
+  <header class="site-head" style="background-image: url(//github.com/yiranblade/yiranblade.github.io/blob/master/image/miao1.jpg?raw=true)">
+    <div class="vertical">
+        <div class="site-head-content inner">
+             <a class="blog-logo" href="/"><img src="//timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1550662707158&di=cbe3e6f18206a4d6f1e7bbd1b8fb2d81&imgtype=0&src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201408%2F29%2F20140829092016_cvJRe.jpeg" alt="Blog Logo"></a> 
+            <h1 class="blog-title">yiranblade's blog</h1>
+            <h2 class="blog-description"></h2>
+        </div>
+    </div>
+</header>
+  
+
+<main class="content" role="main">
+  <article class="post">
+    <span class="post-meta">
+      <time datetime="2019-03-01T02:48:28.249Z" itemprop="datePublished">
+          2019-03-01
+      </time>
+    
+</span>
+    <h1 class="post-title">go语言读书笔记-action系列（切片）</h1>
+    <section class="post-content">
+      <p>go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需要。</p>
+<h2 id="切片的内部实现"><a href="#切片的内部实现" class="headerlink" title="切片的内部实现"></a>切片的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png" alt="image_1d4rgl7v3tf2110v19hd80t1q1dp.png-66.2kB"><br>在go中，切片可以看作对底层数组所做的抽象，切片的数据包含三个字段：</p>
+<ul>
+<li>指向数组的指针</li>
+<li>切片访问元素的个数</li>
+<li>允许增长到的元素个数（就是切片的容量，占用的内存空间）</li>
+</ul>
+<p>通过这种结构，明显可以发现在使用切片时需要十分小心，因为其共享底层数组，可能一不小心就会干扰到其它切片的元素。<br>但是这种结构也使得切片在函数间传递时不用像数组那样传递过大的数据量，无论多大的切片都只有24个字节（指针8个，元素个数8个，容量8个），极大的提升了效率。</p>
+<h2 id="append"><a href="#append" class="headerlink" title="append"></a>append</h2><p>使用append可以向切片中增加元素:</p>
+<h4 id="func-append-slice-Type-elems-…Type-Type"><a href="#func-append-slice-Type-elems-…Type-Type" class="headerlink" title="func append(slice []Type, elems …Type) []Type"></a>func append(slice []Type, elems …Type) []Type</h4><p>append 在切片容量足够时，直接将元素插入底层数组并更新切片访问元素的个数。切片的容量在不足够时append会自动生成新的切片增加容量，每次增加的容量是原来的两倍。但是当元素个数超过1000时，append容量的增长因子会被设为1.25。</p>
+<h2 id="创建切片的三个索引"><a href="#创建切片的三个索引" class="headerlink" title="创建切片的三个索引"></a>创建切片的三个索引</h2><p>在创建切片时，原来还可以使用第三个索引，第三个索引是用来控制切片的容量。</p>
+<ul>
+<li>为什么需要限制切片的容量？</li>
+</ul>
+<h4 id="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"><a href="#因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。" class="headerlink" title="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"></a>因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。</h4>
+    </section>
+    <footer class="post-footer">
+      <section class="author">
+    <h4></h4>
+    <p></p>
+</section>
+      <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        <span class="hidden">Google+</span>
+    </a>
+</section>
+    </footer>
+  </article>
+  <nav class="pagination" role="pagination">
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/">
+        go语言读书笔记-action系列（一个简单的go程序） →
+    </a>
+    
+</nav>
+  <div id="comment" class="comments-area">
+    <h1 class="title"><a href="#disqus_comments" name="disqus_comments">Comments</a></h1>
+
+    
+</div>
+</main>
+
+
+  
+<footer class="site-footer">
+  
+  <div class="inner">
+     <section class="copyright">All content copyright <a href="/">yiranblade's blog</a> &copy; 2014 &bull; All rights reserved.</section>
+     <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://zespia.tw/hexo/">Hexo</a></section>
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script type="text/javascript" src="/js/jquery.fitvids.js"></script>
+<script type="text/javascript" src="/js/index.js"></script>
+
+
+
+
+
+
+</body>
+</html>
