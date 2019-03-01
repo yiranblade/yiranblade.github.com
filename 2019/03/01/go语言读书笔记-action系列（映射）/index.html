@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <title>go语言读书笔记-action系列（映射） | yiranblade&#39;s blog</title>
+  <meta name="description" content="" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Noto+Serif:400,700,400italic|Open+Sans:700,400" />
+
+  <meta name="generator" content="yiranblade's blog">
+
+  
+  
+  
+
+  
+</head>
+
+
+<body class="post-template">
+
+  <header class="site-head" style="background-image: url(//github.com/yiranblade/yiranblade.github.io/blob/master/image/miao1.jpg?raw=true)">
+    <div class="vertical">
+        <div class="site-head-content inner">
+             <a class="blog-logo" href="/"><img src="//timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1550662707158&di=cbe3e6f18206a4d6f1e7bbd1b8fb2d81&imgtype=0&src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201408%2F29%2F20140829092016_cvJRe.jpeg" alt="Blog Logo"></a> 
+            <h1 class="blog-title">yiranblade's blog</h1>
+            <h2 class="blog-description"></h2>
+        </div>
+    </div>
+</header>
+  
+
+<main class="content" role="main">
+  <article class="post">
+    <span class="post-meta">
+      <time datetime="2019-03-01T06:43:32.361Z" itemprop="datePublished">
+          2019-03-01
+      </time>
+    
+</span>
+    <h1 class="post-title">go语言读书笔记-action系列（映射）</h1>
+    <section class="post-content">
+      <p>对于习惯了map这种表述方式的我，现在看来还是go中使用映射这个词，表达这一结构感觉更加精准点。</p>
+<h2 id="映射内部实现方式"><a href="#映射内部实现方式" class="headerlink" title="映射内部实现方式"></a>映射内部实现方式</h2><p>映射的内部是无序的，因为其使用了散列表。<br><img src="http://static.zybuluo.com/yiranblade/f73al21v28v8ixnbx7b09813/image_1d4rk5af2rkt1taiego1ied6jv9.png" alt="image_1d4rk5af2rkt1taiego1ied6jv9.png-156.1kB"></p>
+<p>映射的散列结构包含一组桶，所有的操作都要先选择一个桶。把操作映射时指定的键传递给映射的散列函数就可以选中对应的桶。<br>go语言生成散列键的过程如下：</p>
+<ol>
+<li>这些字符串会转换为一个数值（散列值）。</li>
+<li>这个数值落在映射已有桶的序号范围内表示一个可以用于存储的桶的序号。</li>
+<li>最后这个数值被用来选择桶，用于存储或者查找指定的键值对。</li>
+</ol>
+<p>在此需要强调的是，散列值的低位用来选择桶，高位用来区分不同的项。<br>对于桶的内部实现，感觉action中解释的并不是很好，尤其这个散列值高位的作用，解释感觉很难理解。<br>桶的内部实现使用两个数据结构实现。第一个是数组，内部存储的是用于选择桶的散列键的高位值（在对key/value对增删查的时候，先比较key的hash值高八位是否相等，然后再比较具体的key值，主要用来帮助区分寻找对应的key，不用每次都对key做全等判断）。第二个数据结构是一个字节数组，用于存储键值对。该字节数组存储了这个桶里所有的键，之后依次存储了这个桶里所有的值。</p>
+<h2 id="映射的扩容"><a href="#映射的扩容" class="headerlink" title="映射的扩容"></a>映射的扩容</h2><p>action没有提到这一点，但是我觉得应该去探索下。<br>在桶中插入元素时，当桶填满后，将通过overflow指针来mallocgc一个新的bucket出来形成链表。<br>随着元素的增长，在桶链中寻找特定的key会变得效率低下，所以再插入的元素个数/桶达到阙值时（貌似设置为6.5），map会扩容，创建新的桶数组，长度为之前长度的两倍。</p>
+
+    </section>
+    <footer class="post-footer">
+      <section class="author">
+    <h4></h4>
+    <p></p>
+</section>
+      <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        <span class="hidden">Google+</span>
+    </a>
+</section>
+    </footer>
+  </article>
+  <nav class="pagination" role="pagination">
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2019/03/01/go语言读书笔记-action系列（切片）/">
+        go语言读书笔记-action系列（切片） →
+    </a>
+    
+</nav>
+  <div id="comment" class="comments-area">
+    <h1 class="title"><a href="#disqus_comments" name="disqus_comments">Comments</a></h1>
+
+    
+</div>
+</main>
+
+
+  
+<footer class="site-footer">
+  
+  <div class="inner">
+     <section class="copyright">All content copyright <a href="/">yiranblade's blog</a> &copy; 2014 &bull; All rights reserved.</section>
+     <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://zespia.tw/hexo/">Hexo</a></section>
+  </div>
+</footer>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script type="text/javascript" src="/js/jquery.fitvids.js"></script>
+<script type="text/javascript" src="/js/index.js"></script>
+
+
+
+
+
+
+</body>
+</html>
