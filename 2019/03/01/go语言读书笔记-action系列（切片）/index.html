@@ -1,52 +1,108 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" >
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
   <title>go语言读书笔记-action系列（切片） | yiranblade&#39;s blog</title>
-  <meta name="description" content="" />
-  <meta name="HandheldFriendly" content="True" />
-  <meta name="MobileOptimized" content="320" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="stylesheet" type="text/css" href="/css/screen.css" />
-  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Noto+Serif:400,700,400italic|Open+Sans:700,400" />
-
-  <meta name="generator" content="yiranblade's blog">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go语言读书笔记-action系列（切片）">
+<meta property="og:url" content="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/index.html">
+<meta property="og:site_name" content="yiranblade&#39;s blog">
+<meta property="og:description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png">
+<meta property="og:updated_time" content="2019-03-01T02:48:56.284Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="go语言读书笔记-action系列（切片）">
+<meta name="twitter:description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
+<meta name="twitter:image" content="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png">
+  
+    <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
   
   
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/plugin/bganimation/bg.css">
   
 
-  
 </head>
-
-
-<body class="post-template">
-
-  <header class="site-head" style="background-image: url(//github.com/yiranblade/yiranblade.github.io/blob/master/image/miao1.jpg?raw=true)">
-    <div class="vertical">
-        <div class="site-head-content inner">
-             <a class="blog-logo" href="/"><img src="//timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1550662707158&di=cbe3e6f18206a4d6f1e7bbd1b8fb2d81&imgtype=0&src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201408%2F29%2F20140829092016_cvJRe.jpeg" alt="Blog Logo"></a> 
-            <h1 class="blog-title">yiranblade's blog</h1>
-            <h2 class="blog-description"></h2>
-        </div>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <div class="widget-wrap mobile-header">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>7</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>0</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>0</strong><br>标签</div></a>
     </div>
-</header>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+        <section id="main"><article id="post-go语言读书笔记-action系列（切片）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/03/01/go语言读书笔记-action系列（切片）/" class="article-date">
+  <time class="post-time" datetime="2019-03-01T02:48:28.249Z" itemprop="datePublished">
+    <span class="post-month">3月</span><br>
+    <span class="post-day">01</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      go语言读书笔记-action系列（切片）
+    </h1>
   
 
-<main class="content" role="main">
-  <article class="post">
-    <span class="post-meta">
-      <time datetime="2019-03-01T02:48:28.249Z" itemprop="datePublished">
-          2019-03-01
-      </time>
+        <div>
+          
+          
+              
+
+          
+        </div>
+      </header>
     
-</span>
-    <h1 class="post-title">go语言读书笔记-action系列（切片）</h1>
-    <section class="post-content">
-      <p>go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需要。</p>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需要。</p>
 <h2 id="切片的内部实现"><a href="#切片的内部实现" class="headerlink" title="切片的内部实现"></a>切片的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png" alt="image_1d4rgl7v3tf2110v19hd80t1q1dp.png-66.2kB"><br>在go中，切片可以看作对底层数组所做的抽象，切片的数据包含三个字段：</p>
 <ul>
 <li>指向数组的指针</li>
@@ -61,65 +117,189 @@
 <li>为什么需要限制切片的容量？</li>
 </ul>
 <h4 id="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"><a href="#因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。" class="headerlink" title="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"></a>因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。</h4>
-    </section>
-    <footer class="post-footer">
-      <section class="author">
-    <h4></h4>
-    <p></p>
-</section>
-      <section class="share">
-    <h4>Share this post</h4>
-    <a class="icon-twitter" href="http://twitter.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
-        <span class="hidden">Twitter</span>
-    </a>
-    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
-        <span class="hidden">Facebook</span>
-    </a>
-    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
-        <span class="hidden">Google+</span>
-    </a>
-</section>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjt40rjwf0003vm2x9oufos4v" class="article-share-link">分享</a>
+      
+      
     </footer>
-  </article>
-  <nav class="pagination" role="pagination">
+  </div>
+  
     
-    <a class="newer-posts" href="/2019/03/01/go语言读书笔记-action系列（映射）/">
-        ← go语言读书笔记-action系列（映射）
+<nav id="article-nav">
+  
+    <a href="/2019/03/01/go语言读书笔记-action系列（映射）/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">上一篇</strong>
+      <div class="article-nav-title">
+        
+          go语言读书笔记-action系列（映射）
+        
+      </div>
     </a>
-    
-    <span class="page-number">•</span>
-    
-    <a class="older-posts" href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/">
-        go语言读书笔记-action系列（一个简单的go程序） →
+  
+  
+    <a href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">go语言读书笔记-action系列（一个简单的go程序）</div>
     </a>
-    
+  
 </nav>
-  <div id="comment" class="comments-area">
-    <h1 class="title"><a href="#disqus_comments" name="disqus_comments">Comments</a></h1>
 
-    
+  
+</article>
+
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <h1 class="blog-title">yiranblade&#39;s blog</h1>
+    <h2 class="blog-subtitle"></h2>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
 </div>
-</main>
-
 
   
-<footer class="site-footer">
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>7</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>0</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>0</strong><br>标签</div></a>
+    </div>
+
+
+
+    <div class="social-link">
+      
+        <a class="hvr-bounce-in" href="http://github.com/ShanaMaid" target="_blank" title="Github">
+          Github
+        </a>
+      
+    </div>
+
+    <div class="friend-link">
+      <h2>友情链接</h2>
+      
+        <a class="hvr-bounce-in" href="http://blog.shanamaid.top/" target="_blank" title="ShanaMaid">
+          ShanaMaid
+        </a>
+      
+    </div>
+  </div>
+</div>
+
   
-  <div class="inner">
-     <section class="copyright">All content copyright <a href="/">yiranblade's blog</a> &copy; 2014 &bull; All rights reserved.</section>
-     <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://zespia.tw/hexo/">Hexo</a></section>
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy;2018 - 2019 yiranblade&#39;s blog<br>
+      由<a href="http://hexo.io/" target="_blank">Hexo</a>强力驱动 | 
+      主题-<a href="https://github.com/ShanaMaid/hexo-theme-shana">Shana</a>
+      
+    </div>
+    
   </div>
 </footer>
+    </div>
+    
 
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-
-<script type="text/javascript" src="/js/jquery.fitvids.js"></script>
-<script type="text/javascript" src="/js/index.js"></script>
-
-
-
+<script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//apps.bdimg.com/libs/wow/0.1.6/wow.min.js"></script>
+<script>
+new WOW().init();
+</script>   
 
 
+  <link rel="stylesheet" href="/plugin/fancybox/jquery.fancybox.css">
+  <script src="/plugin/fancybox/jquery.fancybox.pack.js"></script>
 
+
+
+  <link rel="stylesheet" href="/plugin/galmenu/GalMenu.css">
+  <script src="/plugin/galmenu/GalMenu.js"></script>
+  <div class="GalMenu GalDropDown">
+      <div class="circle" id="gal">
+        <div class="ring">
+          
+            <a href="/" title class="menuItem">首页</a>
+          
+            <a href="/tags" title class="menuItem">标签</a>
+          
+            <a href="/categories" title class="menuItem">分类</a>
+          
+            <a href="/archives" title class="menuItem">归档</a>
+          
+            <a href="/xxxxxxxxx" title class="menuItem">xxx</a>
+          
+            <a href="/xxxxxxx" title class="menuItem">xxxx</a>
+          
+        </div>
+        
+          <audio id="audio" src="#"></audio>
+        
+      </div> 
+</div>
+<div id="overlay" style="opacity: 1; cursor: pointer;"></div>
+  <script type="text/javascript">var items = document.querySelectorAll('.menuItem');
+    for (var i = 0,
+    l = items.length; i < l; i++) {
+      items[i].style.left = (50 - 35 * Math.cos( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%";
+      items[i].style.top = (50 + 35 * Math.sin( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%"
+    }</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('body').GalMenu({
+      'menu': 'GalDropDown'
+    })
+  });
+</script>
+
+  <section class="hidden-xs"> 
+  <ul class="cb-slideshow"> 
+    <li><span>苟利</span></li> 
+    <li><span>国家</span></li> 
+    <li><span>生死以</span></li> 
+    <li><span>岂能</span></li> 
+    <li><span>祸福</span></li> 
+    <li><span>趋避之</span></li> 
+  </ul>
+</section>
+<script src="/js/script.js"></script>
+
+
+
+  </div>
 </body>
 </html>
