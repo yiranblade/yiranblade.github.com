@@ -113,14 +113,27 @@
 <p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
 <h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">type ServerCipher struct &#123;</span><br><span class="line">	server string</span><br><span class="line">	cipher *ss.Cipher</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var servers struct &#123;</span><br><span class="line">	srvCipher []*ServerCipher</span><br><span class="line">	failCnt   []int // failed connection count</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">func parseServerConfig(config *ss.Config) &#123;</span><br><span class="line">	hasPort := func(s string) bool &#123;</span><br><span class="line">		_, port, err := net.SplitHostPort(s)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			return false</span><br><span class="line">		&#125;</span><br><span class="line">		return port != &quot;&quot;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if len(config.ServerPassword) == 0 &#123;</span><br><span class="line">		// only one encryption table</span><br><span class="line">		cipher, err := ss.NewCipher(config.Method, config.Password)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">		&#125;</span><br><span class="line">		srvPort := strconv.Itoa(config.ServerPort)</span><br><span class="line">		srvArr := config.GetServerArray()</span><br><span class="line">		n := len(srvArr)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		for i, s := range srvArr &#123;</span><br><span class="line">			if hasPort(s) &#123;</span><br><span class="line">				log.Println(&quot;ignore server_port option for server&quot;, s)</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;s, cipher&#125;</span><br><span class="line">			&#125; else &#123;</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;net.JoinHostPort(s, srvPort), cipher&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		// multiple servers</span><br><span class="line">		n := len(config.ServerPassword)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		cipherCache := make(map[string]*ss.Cipher)</span><br><span class="line">		i := 0</span><br><span class="line">		for _, serverInfo := range config.ServerPassword &#123;</span><br><span class="line">			if len(serverInfo) &lt; 2 || len(serverInfo) &gt; 3 &#123;</span><br><span class="line">				log.Fatalf(&quot;server %v syntax error\n&quot;, serverInfo)</span><br><span class="line">			&#125;</span><br><span class="line">			server := serverInfo[0]</span><br><span class="line">			passwd := serverInfo[1]</span><br><span class="line">			encmethod := &quot;&quot;</span><br><span class="line">			if len(serverInfo) == 3 &#123;</span><br><span class="line">				encmethod = serverInfo[2]</span><br><span class="line">			&#125;</span><br><span class="line">			if !hasPort(server) &#123;</span><br><span class="line">				log.Fatalf(&quot;no port for server %s\n&quot;, server)</span><br><span class="line">			&#125;</span><br><span class="line">			// Using &quot;|&quot; as delimiter is safe here, since no encryption</span><br><span class="line">			// method contains it in the name.</span><br><span class="line">			cacheKey := encmethod + &quot;|&quot; + passwd</span><br><span class="line">			cipher, ok := cipherCache[cacheKey]</span><br><span class="line">			if !ok &#123;</span><br><span class="line">				var err error</span><br><span class="line">				cipher, err = ss.NewCipher(encmethod, passwd)</span><br><span class="line">				if err != nil &#123;</span><br><span class="line">					log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">				&#125;</span><br><span class="line">				cipherCache[cacheKey] = cipher</span><br><span class="line">			&#125;</span><br><span class="line">			servers.srvCipher[i] = &amp;ServerCipher&#123;server, cipher&#125;</span><br><span class="line">			i++</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	servers.failCnt = make([]int, len(servers.srvCipher))</span><br><span class="line">	for _, se := range servers.srvCipher &#123;</span><br><span class="line">		log.Println(&quot;available remote server&quot;, se.server)</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">st=&gt;start: Start</span><br><span class="line">op1=&gt;operation: 传入服务器配置信息</span><br><span class="line">cond=&gt;condition: 是否多个配置项?</span><br><span class="line">opY1=&gt;operation: 建立ss.Cipher数组</span><br><span class="line">opY2=&gt;operation: 循环读取配置信息最后写入全局变量servers</span><br><span class="line">opN1=&gt;operation: 设置加密方法，提取ip数组</span><br><span class="line">opN2=&gt;operation: 循环设置相关信息</span><br><span class="line">e=&gt;end</span><br><span class="line"></span><br><span class="line">st-&gt;op1-&gt;cond</span><br><span class="line">cond(yes)-&gt;opY1-&gt;opY2-&gt;e</span><br><span class="line">cond(no)-&gt;opN1-&gt;opN2-&gt;e</span><br></pre></td></tr></table></figure></p>
+<p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
+<p><div id="flowchart-0" class="flow-chart"></div></p>
 <h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">run</span><span class="params">(listenAddr <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	ln, err := net.Listen(<span class="string">"tcp"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	log.Printf(<span class="string">"starting local socks5 server at %v ...\n"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Println(<span class="string">"accept:"</span>, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> handleConnection(conn)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>##结语<br>至此，main函数的整体就差不多，接下来我们需要看下在拿到请求后，handleConnection函数是怎样对其进行处理的。</p>
+<p><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: Start
+op1=>operation: 传入服务器配置信息
+cond=>condition: 是否多个配置项?
+opY1=>operation: 建立ss.Cipher数组
+opY2=>operation: 循环读取配置信息最后写入全局变量servers
+opN1=>operation: 设置加密方法，提取ip数组
+opN2=>operation: 循环设置相关信息
+e=>end
+
+st->op1->cond
+cond(yes)->opY1->opY2->e
+cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjtfqr5o100045a2xsbj9dfkn" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjtgyqauj00041x2xloqqmjal" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -230,7 +243,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjtfqr5nz00025a2xv318gqqe" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjtgyqaug00021x2xl3buj5in" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -289,7 +302,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjtfqr5o600085a2xyp9i8uvi" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjtgyqaun00071x2xk7xwc9e1" class="article-share-link">分享</a>
       
       
     </footer>
@@ -347,7 +360,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjtfqr5oa000d5a2x2bdraxcs" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjtgyqaut000d1x2xu3aa7m03" class="article-share-link">分享</a>
       
       
     </footer>
@@ -409,7 +422,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjtfqr5o800095a2xqq6t1en7" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjtgyqauo00081x2xwvmja2bc" class="article-share-link">分享</a>
       
       
     </footer>
@@ -460,7 +473,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjtfqr5o500075a2xx3ifl4q6" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjtgyqav4000e1x2xjrj1ggfp" class="article-share-link">分享</a>
       
       
     </footer>
@@ -512,7 +525,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjtfqr5nu00005a2xhklf89ow" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjtgyqaua00001x2xvz1c7ncw" class="article-share-link">分享</a>
       
       
     </footer>
@@ -602,7 +615,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjtfqr5oe000e5a2xk5999awm" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjtgyqauq00091x2xvn43bgra" class="article-share-link">分享</a>
       
       
     </footer>
