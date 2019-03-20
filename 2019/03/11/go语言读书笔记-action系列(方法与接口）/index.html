@@ -1,25 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head><meta name="generator" content="Hexo 3.8.0">
-  <link href="/plugins/prettify/prettify.css" rel="stylesheet">
   <meta charset="utf-8">
   
   <title>go语言读书笔记-action系列(方法与接口) | yiranblade&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。 type user struct {     name string     email string }  func (u user) notify() {     fmt.Pri">
+  <meta name="description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。12345678type user struct &amp;#123;    name string    email string&amp;#125;func (u user) notify() &amp;">
 <meta name="keywords" content="go语言">
 <meta property="og:type" content="article">
 <meta property="og:title" content="go语言读书笔记-action系列(方法与接口)">
 <meta property="og:url" content="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/index.html">
 <meta property="og:site_name" content="yiranblade&#39;s blog">
-<meta property="og:description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。 type user struct {     name string     email string }  func (u user) notify() {     fmt.Pri">
+<meta property="og:description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。12345678type user struct &amp;#123;    name string    email string&amp;#125;func (u user) notify() &amp;">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://static.zybuluo.com/yiranblade/ids8bjg2xxb5yhbk7ecmoh4m/image_1d5llurtkgeq6kr1oln1gj0igdm.png">
 <meta property="og:image" content="http://static.zybuluo.com/yiranblade/1qecorn6y0a92pregavnwkoc/image_1d5lmui17tig1l7p1ec91bv31m4k2g.png">
 <meta property="og:updated_time" content="2019-03-19T12:15:18.281Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="go语言读书笔记-action系列(方法与接口)">
-<meta name="twitter:description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。 type user struct {     name string     email string }  func (u user) notify() {     fmt.Pri">
+<meta name="twitter:description" content="方法简单概述go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。12345678type user struct &amp;#123;    name string    email string&amp;#125;func (u user) notify() &amp;">
 <meta name="twitter:image" content="http://static.zybuluo.com/yiranblade/ids8bjg2xxb5yhbk7ecmoh4m/image_1d5llurtkgeq6kr1oln1gj0igdm.png">
   
     <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
@@ -27,6 +26,8 @@
   
     <link rel="icon" href="/favicon.png">
   
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
   
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/plugin/bganimation/bg.css">
@@ -107,36 +108,11 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="方法简单概述"><a href="#方法简单概述" class="headerlink" title="方法简单概述"></a>方法简单概述</h2><p>go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。</p>
-<pre><code>type user struct {
-    name string
-    email string
-}
-
-func (u user) notify() {
-    fmt.Printf(&quot;hello world!&quot;)
-}
-</code></pre><p>ok，其实关于这一篇读书笔记我重点想记录的是接口，关于方法大概声明就是这样，使用的套路和java、php等各种面向对象的语言都是差不多。</p>
+        <h2 id="方法简单概述"><a href="#方法简单概述" class="headerlink" title="方法简单概述"></a>方法简单概述</h2><p>go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。<br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type<span class="built_in"> user </span>struct &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (u user) notify() &#123;</span><br><span class="line">    fmt.Printf(<span class="string">"hello world!"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>ok，其实关于这一篇读书笔记我重点想记录的是接口，关于方法大概声明就是这样，使用的套路和java、php等各种面向对象的语言都是差不多。</p>
 <hr>
-<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>go语言中的接口，个人感觉和java，php中这类相比，与实现者之间的联系真的是十分薄弱，其不需要使用任何显式的关键字指明要实现该接口。只要类型绑定了同样的方法就认为其实现了该接口，就可以赋值给该接口类型。也就是说go中需要实现某个接口不需要显式的指明实现哪一个，想实现哪个接口直接编写该方法就可以，不想实现后就删除该方法。</p>
-<pre><code>type notifier inteface {
-    notify()
-}
-
-type user struct{
-    name string
-    email string
-} 
-
-func (u *user) notify(){
-    fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,u.name,u.email)
-}
-//这就可以说user类型实现了notifier 接口
-func main（){
-    var n notifier
-    n = user{&quot;bill&quot;}
-}
-</code></pre><hr>
+<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>go语言中的接口，个人感觉和java，php中这类相比，与实现者之间的联系真的是十分薄弱，其不需要使用任何显式的关键字指明要实现该接口。只要类型绑定了同样的方法就认为其实现了该接口，就可以赋值给该接口类型。也就是说go中需要实现某个接口不需要显式的指明实现哪一个，想实现哪个接口直接编写该方法就可以，不想实现后就删除该方法。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> notifier inteface &#123;</span><br><span class="line">    notify()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> user <span class="keyword">struct</span>&#123;</span><br><span class="line">    name <span class="keyword">string</span></span><br><span class="line">    email <span class="keyword">string</span></span><br><span class="line">&#125; </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(u *user)</span> <span class="title">notify</span><span class="params">()</span></span>&#123;</span><br><span class="line">    fmt.Printf(<span class="string">"Sending user email to %s&lt;%s&gt;\n"</span>,u.name,u.email)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//这就可以说user类型实现了notifier 接口</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span>（)</span>&#123;</span><br><span class="line">    <span class="keyword">var</span> n notifier</span><br><span class="line">    n = user&#123;<span class="string">"bill"</span>&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<hr>
 <h2 id="接口的内部实现"><a href="#接口的内部实现" class="headerlink" title="接口的内部实现"></a>接口的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/ids8bjg2xxb5yhbk7ecmoh4m/image_1d5llurtkgeq6kr1oln1gj0igdm.png" alt="image_1d5llurtkgeq6kr1oln1gj0igdm.png-126.9kB"></p>
 <p>上图展示了在user类型值赋值后接口变量的值的内部布局。接口值是一个两个字长度的数据结构，第一个字包含一个指向内部表的指针。这个内部表叫iTable，包含了所存储的值的类型信息。iTable包含了已存储的值的类型信息以及与这个值相关联的一组方法。第二个字是一个指向所存储值的指针。</p>
 <p><img src="http://static.zybuluo.com/yiranblade/1qecorn6y0a92pregavnwkoc/image_1d5lmui17tig1l7p1ec91bv31m4k2g.png" alt="image_1d5lmui17tig1l7p1ec91bv31m4k2g.png-128.5kB"></p>
@@ -192,7 +168,7 @@ func main（){
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjth2jfws0005x42xuhv8uyir" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjth48ggt00038p2x239grm1t" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -376,13 +352,6 @@ new WOW().init();
 
 
 
-<script src="/plugins/prettify/prettify.js"></script>
-<script type="text/javascript">
-$(window).load(function(){
-$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
- prettyPrint();
-})
-</script>
 
 
 

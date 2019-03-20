@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head><meta name="generator" content="Hexo 3.8.0">
-  <link href="/plugins/prettify/prettify.css" rel="stylesheet">
   <meta charset="utf-8">
   
   <title>go版本shadowsocks源码(一) | yiranblade&#39;s blog</title>
@@ -24,6 +23,8 @@
   
     <link rel="icon" href="/favicon.png">
   
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
   
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/plugin/bganimation/bg.css">
@@ -110,152 +111,14 @@
 <hr>
 <h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><p>首先我们来看下客户端的代码。</p>
 <h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>go语言和大多数语言一样都是从main函数开始的，在源码阅读的过程我们也从main函数开始逐步往下分析。<br>mian函数整体我认为可以分为三个部分，第一部分读取相关的配置信息，第二部分处理服务器配置信息，第三部分启动客户端，监听本地端口。</p>
-<h4 id="读取客户端启动的配置信息"><a href="#读取客户端启动的配置信息" class="headerlink" title="读取客户端启动的配置信息"></a>读取客户端启动的配置信息</h4><pre><code>                        ......
-    flag.BoolVar(&amp;printVer, &quot;version&quot;, false, &quot;print version&quot;)
-    flag.StringVar(&amp;configFile, &quot;c&quot;, &quot;config.json&quot;, &quot;specify config file&quot;)
-    flag.StringVar(&amp;cmdServer, &quot;s&quot;, &quot;&quot;, &quot;server address&quot;)
-    flag.StringVar(&amp;cmdConfig.LocalAddress, &quot;b&quot;, &quot;&quot;, &quot;local address, listen only to this address if specified&quot;)
-    flag.StringVar(&amp;cmdConfig.Password, &quot;k&quot;, &quot;&quot;, &quot;password&quot;)
-    flag.IntVar(&amp;cmdConfig.ServerPort, &quot;p&quot;, 0, &quot;server port&quot;)
-    flag.IntVar(&amp;cmdConfig.Timeout, &quot;t&quot;, 300, &quot;timeout in seconds&quot;)
-    flag.IntVar(&amp;cmdConfig.LocalPort, &quot;l&quot;, 0, &quot;local socks5 proxy port&quot;)
-    flag.StringVar(&amp;cmdConfig.Method, &quot;m&quot;, &quot;&quot;, &quot;encryption method, default: aes-256-cfb&quot;)
-    flag.BoolVar((*bool)(&amp;debug), &quot;d&quot;, false, &quot;print debug message&quot;)
-    flag.StringVar(&amp;cmdURI, &quot;u&quot;, &quot;&quot;, &quot;shadowsocks URI&quot;)
-                        ......
-
-    config, err := ss.ParseConfig(configFile)
-    if err != nil {
-        config = &amp;cmdConfig
-        if !os.IsNotExist(err) {
-            fmt.Fprintf(os.Stderr, &quot;error reading %s: %v\n&quot;, configFile, err)
-            os.Exit(1)
-        }
-    } else {
-        ss.UpdateConfig(config, &amp;cmdConfig)
-    }
-    if config.Method == &quot;&quot; {
-        config.Method = &quot;aes-256-cfb&quot;
-    }
-
-</code></pre><p>从上述代码中我们可以看到，除了从命令行读取配置信息外，还可以指定json文件读取配置信息。ss的配置信息包括这样几个部分：</p>
-<pre><code>    Server       interface{} `json:&quot;server&quot;`
-    ServerPort   int         `json:&quot;server_port&quot;`
-    LocalPort    int         `json:&quot;local_port&quot;`
-    LocalAddress string      `json:&quot;local_address&quot;`
-    Password     string      `json:&quot;password&quot;`
-    Method       string      `json:&quot;method&quot;` // encryption method
-
-    // following options are only used by server
-    PortPassword map[string]string `json:&quot;port_password&quot;`
-    Timeout      int               `json:&quot;timeout&quot;`
-
-    // following options are only used by client
-
-    // The order of servers in the client config is significant, so use array
-    // instead of map to preserve the order.
-    ServerPassword [][]string `json:&quot;server_password&quot;`
-</code></pre><p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
-<h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。</p>
-<pre><code>type ServerCipher struct {
-    server string
-    cipher *ss.Cipher
-}
-
-var servers struct {
-    srvCipher []*ServerCipher
-    failCnt   []int // failed connection count
-}
-</code></pre><p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。</p>
-<pre><code>func parseServerConfig(config *ss.Config) {
-    hasPort := func(s string) bool {
-        _, port, err := net.SplitHostPort(s)
-        if err != nil {
-            return false
-        }
-        return port != &quot;&quot;
-    }
-
-    if len(config.ServerPassword) == 0 {
-        // only one encryption table
-        cipher, err := ss.NewCipher(config.Method, config.Password)
-        if err != nil {
-            log.Fatal(&quot;Failed generating ciphers:&quot;, err)
-        }
-        srvPort := strconv.Itoa(config.ServerPort)
-        srvArr := config.GetServerArray()
-        n := len(srvArr)
-        servers.srvCipher = make([]*ServerCipher, n)
-
-        for i, s := range srvArr {
-            if hasPort(s) {
-                log.Println(&quot;ignore server_port option for server&quot;, s)
-                servers.srvCipher[i] = &amp;ServerCipher{s, cipher}
-            } else {
-                servers.srvCipher[i] = &amp;ServerCipher{net.JoinHostPort(s, srvPort), cipher}
-            }
-        }
-    } else {
-        // multiple servers
-        n := len(config.ServerPassword)
-        servers.srvCipher = make([]*ServerCipher, n)
-
-        cipherCache := make(map[string]*ss.Cipher)
-        i := 0
-        for _, serverInfo := range config.ServerPassword {
-            if len(serverInfo) &lt; 2 || len(serverInfo) &gt; 3 {
-                log.Fatalf(&quot;server %v syntax error\n&quot;, serverInfo)
-            }
-            server := serverInfo[0]
-            passwd := serverInfo[1]
-            encmethod := &quot;&quot;
-            if len(serverInfo) == 3 {
-                encmethod = serverInfo[2]
-            }
-            if !hasPort(server) {
-                log.Fatalf(&quot;no port for server %s\n&quot;, server)
-            }
-            // Using &quot;|&quot; as delimiter is safe here, since no encryption
-            // method contains it in the name.
-            cacheKey := encmethod + &quot;|&quot; + passwd
-            cipher, ok := cipherCache[cacheKey]
-            if !ok {
-                var err error
-                cipher, err = ss.NewCipher(encmethod, passwd)
-                if err != nil {
-                    log.Fatal(&quot;Failed generating ciphers:&quot;, err)
-                }
-                cipherCache[cacheKey] = cipher
-            }
-            servers.srvCipher[i] = &amp;ServerCipher{server, cipher}
-            i++
-        }
-    }
-    servers.failCnt = make([]int, len(servers.srvCipher))
-    for _, se := range servers.srvCipher {
-        log.Println(&quot;available remote server&quot;, se.server)
-    }
-    return
-}
-</code></pre><p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
+<h4 id="读取客户端启动的配置信息"><a href="#读取客户端启动的配置信息" class="headerlink" title="读取客户端启动的配置信息"></a>读取客户端启动的配置信息</h4><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                       <span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span></span><br><span class="line">   flag.BoolVar(&amp;printVer, <span class="string">"version"</span>, <span class="literal">false</span>, <span class="string">"print version"</span>)</span><br><span class="line">flag.StringVar(&amp;configFile, <span class="string">"c"</span>, <span class="string">"config.json"</span>, <span class="string">"specify config file"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdServer, <span class="string">"s"</span>, <span class="string">""</span>, <span class="string">"server address"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.LocalAddress, <span class="string">"b"</span>, <span class="string">""</span>, <span class="string">"local address, listen only to this address if specified"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Password, <span class="string">"k"</span>, <span class="string">""</span>, <span class="string">"password"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.ServerPort, <span class="string">"p"</span>, 0, <span class="string">"server port"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.Timeout, <span class="string">"t"</span>, 300, <span class="string">"timeout in seconds"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.LocalPort, <span class="string">"l"</span>, 0, <span class="string">"local socks5 proxy port"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Method, <span class="string">"m"</span>, <span class="string">""</span>, <span class="string">"encryption method, default: aes-256-cfb"</span>)</span><br><span class="line">flag.BoolVar((<span class="number">*b</span>ool)(&amp;debug), <span class="string">"d"</span>, <span class="literal">false</span>, <span class="string">"print debug message"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdURI, <span class="string">"u"</span>, <span class="string">""</span>, <span class="string">"shadowsocks URI"</span>)</span><br><span class="line">                    <span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span></span><br><span class="line">                    </span><br><span class="line">config, err := ss.ParseConfig(configFile)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line"><span class="built_in">	config </span>= &amp;cmdConfig</span><br><span class="line">	<span class="keyword">if</span> !os.IsNotExist(err) &#123;</span><br><span class="line">		fmt.Fprintf(os.Stderr, <span class="string">"error reading %s: %v\n"</span>, configFile, err)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	ss.UpdateConfig(config, &amp;cmdConfig)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> config.Method == <span class="string">""</span> &#123;</span><br><span class="line">	config.Method = <span class="string">"aes-256-cfb"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上述代码中我们可以看到，除了从命令行读取配置信息外，还可以指定json文件读取配置信息。ss的配置信息包括这样几个部分：<br><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">   Server       <span class="class"><span class="keyword">interface</span>&#123;</span>&#125; `<span class="string">json:</span><span class="string">"server"</span>`</span><br><span class="line">ServerPort   <span class="keyword">int</span>         `<span class="string">json:</span><span class="string">"server_port"</span>`</span><br><span class="line">LocalPort    <span class="keyword">int</span>         `<span class="string">json:</span><span class="string">"local_port"</span>`</span><br><span class="line">LocalAddress string      `<span class="string">json:</span><span class="string">"local_address"</span>`</span><br><span class="line">Password     string      `<span class="string">json:</span><span class="string">"password"</span>`</span><br><span class="line">Method       string      `<span class="string">json:</span><span class="string">"method"</span>` <span class="comment">// encryption method</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// following options are only used by server</span></span><br><span class="line">PortPassword map[string]string `<span class="string">json:</span><span class="string">"port_password"</span>`</span><br><span class="line">Timeout      <span class="keyword">int</span>               `<span class="string">json:</span><span class="string">"timeout"</span>`</span><br><span class="line"></span><br><span class="line"><span class="comment">// following options are only used by client</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// The order of servers in the client config is significant, so use array</span></span><br><span class="line"><span class="comment">// instead of map to preserve the order.</span></span><br><span class="line">ServerPassword [][]string `<span class="string">json:</span><span class="string">"server_password"</span>`</span><br></pre></td></tr></table></figure></p>
+<p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
+<h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">type ServerCipher <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">	server <span class="built_in">string</span></span><br><span class="line">	cipher *ss.Cipher</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var servers <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">	srvCipher []*ServerCipher</span><br><span class="line">	failCnt   []<span class="keyword">int</span> <span class="comment">// failed connection count</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">parseServerConfig</span><span class="params">(config *ss.Config)</span></span> &#123;</span><br><span class="line">	hasPort := <span class="function"><span class="keyword">func</span><span class="params">(s <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">		_, port, err := net.SplitHostPort(s)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> port != <span class="string">""</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(config.ServerPassword) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// only one encryption table</span></span><br><span class="line">		cipher, err := ss.NewCipher(config.Method, config.Password)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Fatal(<span class="string">"Failed generating ciphers:"</span>, err)</span><br><span class="line">		&#125;</span><br><span class="line">		srvPort := strconv.Itoa(config.ServerPort)</span><br><span class="line">		srvArr := config.GetServerArray()</span><br><span class="line">		n := <span class="built_in">len</span>(srvArr)</span><br><span class="line">		servers.srvCipher = <span class="built_in">make</span>([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> i, s := <span class="keyword">range</span> srvArr &#123;</span><br><span class="line">			<span class="keyword">if</span> hasPort(s) &#123;</span><br><span class="line">				log.Println(<span class="string">"ignore server_port option for server"</span>, s)</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;s, cipher&#125;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;net.JoinHostPort(s, srvPort), cipher&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// multiple servers</span></span><br><span class="line">		n := <span class="built_in">len</span>(config.ServerPassword)</span><br><span class="line">		servers.srvCipher = <span class="built_in">make</span>([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		cipherCache := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]*ss.Cipher)</span><br><span class="line">		i := <span class="number">0</span></span><br><span class="line">		<span class="keyword">for</span> _, serverInfo := <span class="keyword">range</span> config.ServerPassword &#123;</span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(serverInfo) &lt; <span class="number">2</span> || <span class="built_in">len</span>(serverInfo) &gt; <span class="number">3</span> &#123;</span><br><span class="line">				log.Fatalf(<span class="string">"server %v syntax error\n"</span>, serverInfo)</span><br><span class="line">			&#125;</span><br><span class="line">			server := serverInfo[<span class="number">0</span>]</span><br><span class="line">			passwd := serverInfo[<span class="number">1</span>]</span><br><span class="line">			encmethod := <span class="string">""</span></span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(serverInfo) == <span class="number">3</span> &#123;</span><br><span class="line">				encmethod = serverInfo[<span class="number">2</span>]</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> !hasPort(server) &#123;</span><br><span class="line">				log.Fatalf(<span class="string">"no port for server %s\n"</span>, server)</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="comment">// Using "|" as delimiter is safe here, since no encryption</span></span><br><span class="line">			<span class="comment">// method contains it in the name.</span></span><br><span class="line">			cacheKey := encmethod + <span class="string">"|"</span> + passwd</span><br><span class="line">			cipher, ok := cipherCache[cacheKey]</span><br><span class="line">			<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				<span class="keyword">var</span> err error</span><br><span class="line">				cipher, err = ss.NewCipher(encmethod, passwd)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					log.Fatal(<span class="string">"Failed generating ciphers:"</span>, err)</span><br><span class="line">				&#125;</span><br><span class="line">				cipherCache[cacheKey] = cipher</span><br><span class="line">			&#125;</span><br><span class="line">			servers.srvCipher[i] = &amp;ServerCipher&#123;server, cipher&#125;</span><br><span class="line">			i++</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	servers.failCnt = <span class="built_in">make</span>([]<span class="keyword">int</span>, <span class="built_in">len</span>(servers.srvCipher))</span><br><span class="line">	<span class="keyword">for</span> _, se := <span class="keyword">range</span> servers.srvCipher &#123;</span><br><span class="line">		log.Println(<span class="string">"available remote server"</span>, se.server)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
 <p><div id="flowchart-0" class="flow-chart"></div></p>
-<h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。</p>
-<pre><code class="go">func run(listenAddr string) {
-    ln, err := net.Listen(&quot;tcp&quot;, listenAddr)
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Printf(&quot;starting local socks5 server at %v ...\n&quot;, listenAddr)
-    for {
-        conn, err := ln.Accept()
-        if err != nil {
-            log.Println(&quot;accept:&quot;, err)
-            continue
-        }
-        go handleConnection(conn)
-    }
-}
-</code></pre>
+<h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">run</span><span class="params">(listenAddr <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	ln, err := net.Listen(<span class="string">"tcp"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	log.Printf(<span class="string">"starting local socks5 server at %v ...\n"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Println(<span class="string">"accept:"</span>, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> handleConnection(conn)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>##结语<br>至此，main函数的整体就差不多，接下来我们需要看下在拿到请求后，handleConnection函数是怎样对其进行处理的。</p>
 <p><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: Start
 op1=>operation: 传入服务器配置信息
@@ -273,7 +136,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjth2jfwj0000x42xfsx881el" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjth48ggs00028p2x6naoz19e" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -448,13 +311,6 @@ new WOW().init();
 
 
 
-<script src="/plugins/prettify/prettify.js"></script>
-<script type="text/javascript">
-$(window).load(function(){
-$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
- prettyPrint();
-})
-</script>
 
 
 
