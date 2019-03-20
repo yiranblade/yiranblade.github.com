@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta name="generator" content="Hexo 3.8.0">
+  <link href="/plugins/prettify/prettify.css" rel="stylesheet">
   <meta charset="utf-8">
   
   <title>yiranblade&#39;s blog</title>
@@ -18,8 +19,6 @@
   
     <link rel="icon" href="/favicon.png">
   
-  
-    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
   
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/plugin/bganimation/bg.css">
@@ -108,14 +107,152 @@
 <hr>
 <h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><p>首先我们来看下客户端的代码。</p>
 <h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>go语言和大多数语言一样都是从main函数开始的，在源码阅读的过程我们也从main函数开始逐步往下分析。<br>mian函数整体我认为可以分为三个部分，第一部分读取相关的配置信息，第二部分处理服务器配置信息，第三部分启动客户端，监听本地端口。</p>
-<h4 id="读取客户端启动的配置信息"><a href="#读取客户端启动的配置信息" class="headerlink" title="读取客户端启动的配置信息"></a>读取客户端启动的配置信息</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                       ......</span><br><span class="line">   flag.BoolVar(&amp;printVer, &quot;version&quot;, false, &quot;print version&quot;)</span><br><span class="line">flag.StringVar(&amp;configFile, &quot;c&quot;, &quot;config.json&quot;, &quot;specify config file&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdServer, &quot;s&quot;, &quot;&quot;, &quot;server address&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.LocalAddress, &quot;b&quot;, &quot;&quot;, &quot;local address, listen only to this address if specified&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Password, &quot;k&quot;, &quot;&quot;, &quot;password&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.ServerPort, &quot;p&quot;, 0, &quot;server port&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.Timeout, &quot;t&quot;, 300, &quot;timeout in seconds&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.LocalPort, &quot;l&quot;, 0, &quot;local socks5 proxy port&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Method, &quot;m&quot;, &quot;&quot;, &quot;encryption method, default: aes-256-cfb&quot;)</span><br><span class="line">flag.BoolVar((*bool)(&amp;debug), &quot;d&quot;, false, &quot;print debug message&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdURI, &quot;u&quot;, &quot;&quot;, &quot;shadowsocks URI&quot;)</span><br><span class="line">                    ......</span><br><span class="line">                    </span><br><span class="line">config, err := ss.ParseConfig(configFile)</span><br><span class="line">if err != nil &#123;</span><br><span class="line">	config = &amp;cmdConfig</span><br><span class="line">	if !os.IsNotExist(err) &#123;</span><br><span class="line">		fmt.Fprintf(os.Stderr, &quot;error reading %s: %v\n&quot;, configFile, err)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">	ss.UpdateConfig(config, &amp;cmdConfig)</span><br><span class="line">&#125;</span><br><span class="line">if config.Method == &quot;&quot; &#123;</span><br><span class="line">	config.Method = &quot;aes-256-cfb&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>从上述代码中我们可以看到，除了从命令行读取配置信息外，还可以指定json文件读取配置信息。ss的配置信息包括这样几个部分：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">   Server       interface&#123;&#125; `json:&quot;server&quot;`</span><br><span class="line">ServerPort   int         `json:&quot;server_port&quot;`</span><br><span class="line">LocalPort    int         `json:&quot;local_port&quot;`</span><br><span class="line">LocalAddress string      `json:&quot;local_address&quot;`</span><br><span class="line">Password     string      `json:&quot;password&quot;`</span><br><span class="line">Method       string      `json:&quot;method&quot;` // encryption method</span><br><span class="line"></span><br><span class="line">// following options are only used by server</span><br><span class="line">PortPassword map[string]string `json:&quot;port_password&quot;`</span><br><span class="line">Timeout      int               `json:&quot;timeout&quot;`</span><br><span class="line"></span><br><span class="line">// following options are only used by client</span><br><span class="line"></span><br><span class="line">// The order of servers in the client config is significant, so use array</span><br><span class="line">// instead of map to preserve the order.</span><br><span class="line">ServerPassword [][]string `json:&quot;server_password&quot;`</span><br></pre></td></tr></table></figure></p>
-<p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
-<h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">type ServerCipher struct &#123;</span><br><span class="line">	server string</span><br><span class="line">	cipher *ss.Cipher</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var servers struct &#123;</span><br><span class="line">	srvCipher []*ServerCipher</span><br><span class="line">	failCnt   []int // failed connection count</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">func parseServerConfig(config *ss.Config) &#123;</span><br><span class="line">	hasPort := func(s string) bool &#123;</span><br><span class="line">		_, port, err := net.SplitHostPort(s)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			return false</span><br><span class="line">		&#125;</span><br><span class="line">		return port != &quot;&quot;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if len(config.ServerPassword) == 0 &#123;</span><br><span class="line">		// only one encryption table</span><br><span class="line">		cipher, err := ss.NewCipher(config.Method, config.Password)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">		&#125;</span><br><span class="line">		srvPort := strconv.Itoa(config.ServerPort)</span><br><span class="line">		srvArr := config.GetServerArray()</span><br><span class="line">		n := len(srvArr)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		for i, s := range srvArr &#123;</span><br><span class="line">			if hasPort(s) &#123;</span><br><span class="line">				log.Println(&quot;ignore server_port option for server&quot;, s)</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;s, cipher&#125;</span><br><span class="line">			&#125; else &#123;</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;net.JoinHostPort(s, srvPort), cipher&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		// multiple servers</span><br><span class="line">		n := len(config.ServerPassword)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		cipherCache := make(map[string]*ss.Cipher)</span><br><span class="line">		i := 0</span><br><span class="line">		for _, serverInfo := range config.ServerPassword &#123;</span><br><span class="line">			if len(serverInfo) &lt; 2 || len(serverInfo) &gt; 3 &#123;</span><br><span class="line">				log.Fatalf(&quot;server %v syntax error\n&quot;, serverInfo)</span><br><span class="line">			&#125;</span><br><span class="line">			server := serverInfo[0]</span><br><span class="line">			passwd := serverInfo[1]</span><br><span class="line">			encmethod := &quot;&quot;</span><br><span class="line">			if len(serverInfo) == 3 &#123;</span><br><span class="line">				encmethod = serverInfo[2]</span><br><span class="line">			&#125;</span><br><span class="line">			if !hasPort(server) &#123;</span><br><span class="line">				log.Fatalf(&quot;no port for server %s\n&quot;, server)</span><br><span class="line">			&#125;</span><br><span class="line">			// Using &quot;|&quot; as delimiter is safe here, since no encryption</span><br><span class="line">			// method contains it in the name.</span><br><span class="line">			cacheKey := encmethod + &quot;|&quot; + passwd</span><br><span class="line">			cipher, ok := cipherCache[cacheKey]</span><br><span class="line">			if !ok &#123;</span><br><span class="line">				var err error</span><br><span class="line">				cipher, err = ss.NewCipher(encmethod, passwd)</span><br><span class="line">				if err != nil &#123;</span><br><span class="line">					log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">				&#125;</span><br><span class="line">				cipherCache[cacheKey] = cipher</span><br><span class="line">			&#125;</span><br><span class="line">			servers.srvCipher[i] = &amp;ServerCipher&#123;server, cipher&#125;</span><br><span class="line">			i++</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	servers.failCnt = make([]int, len(servers.srvCipher))</span><br><span class="line">	for _, se := range servers.srvCipher &#123;</span><br><span class="line">		log.Println(&quot;available remote server&quot;, se.server)</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
+<h4 id="读取客户端启动的配置信息"><a href="#读取客户端启动的配置信息" class="headerlink" title="读取客户端启动的配置信息"></a>读取客户端启动的配置信息</h4><pre><code>                        ......
+    flag.BoolVar(&amp;printVer, &quot;version&quot;, false, &quot;print version&quot;)
+    flag.StringVar(&amp;configFile, &quot;c&quot;, &quot;config.json&quot;, &quot;specify config file&quot;)
+    flag.StringVar(&amp;cmdServer, &quot;s&quot;, &quot;&quot;, &quot;server address&quot;)
+    flag.StringVar(&amp;cmdConfig.LocalAddress, &quot;b&quot;, &quot;&quot;, &quot;local address, listen only to this address if specified&quot;)
+    flag.StringVar(&amp;cmdConfig.Password, &quot;k&quot;, &quot;&quot;, &quot;password&quot;)
+    flag.IntVar(&amp;cmdConfig.ServerPort, &quot;p&quot;, 0, &quot;server port&quot;)
+    flag.IntVar(&amp;cmdConfig.Timeout, &quot;t&quot;, 300, &quot;timeout in seconds&quot;)
+    flag.IntVar(&amp;cmdConfig.LocalPort, &quot;l&quot;, 0, &quot;local socks5 proxy port&quot;)
+    flag.StringVar(&amp;cmdConfig.Method, &quot;m&quot;, &quot;&quot;, &quot;encryption method, default: aes-256-cfb&quot;)
+    flag.BoolVar((*bool)(&amp;debug), &quot;d&quot;, false, &quot;print debug message&quot;)
+    flag.StringVar(&amp;cmdURI, &quot;u&quot;, &quot;&quot;, &quot;shadowsocks URI&quot;)
+                        ......
+
+    config, err := ss.ParseConfig(configFile)
+    if err != nil {
+        config = &amp;cmdConfig
+        if !os.IsNotExist(err) {
+            fmt.Fprintf(os.Stderr, &quot;error reading %s: %v\n&quot;, configFile, err)
+            os.Exit(1)
+        }
+    } else {
+        ss.UpdateConfig(config, &amp;cmdConfig)
+    }
+    if config.Method == &quot;&quot; {
+        config.Method = &quot;aes-256-cfb&quot;
+    }
+
+</code></pre><p>从上述代码中我们可以看到，除了从命令行读取配置信息外，还可以指定json文件读取配置信息。ss的配置信息包括这样几个部分：</p>
+<pre><code>    Server       interface{} `json:&quot;server&quot;`
+    ServerPort   int         `json:&quot;server_port&quot;`
+    LocalPort    int         `json:&quot;local_port&quot;`
+    LocalAddress string      `json:&quot;local_address&quot;`
+    Password     string      `json:&quot;password&quot;`
+    Method       string      `json:&quot;method&quot;` // encryption method
+
+    // following options are only used by server
+    PortPassword map[string]string `json:&quot;port_password&quot;`
+    Timeout      int               `json:&quot;timeout&quot;`
+
+    // following options are only used by client
+
+    // The order of servers in the client config is significant, so use array
+    // instead of map to preserve the order.
+    ServerPassword [][]string `json:&quot;server_password&quot;`
+</code></pre><p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
+<h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。</p>
+<pre><code>type ServerCipher struct {
+    server string
+    cipher *ss.Cipher
+}
+
+var servers struct {
+    srvCipher []*ServerCipher
+    failCnt   []int // failed connection count
+}
+</code></pre><p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。</p>
+<pre><code>func parseServerConfig(config *ss.Config) {
+    hasPort := func(s string) bool {
+        _, port, err := net.SplitHostPort(s)
+        if err != nil {
+            return false
+        }
+        return port != &quot;&quot;
+    }
+
+    if len(config.ServerPassword) == 0 {
+        // only one encryption table
+        cipher, err := ss.NewCipher(config.Method, config.Password)
+        if err != nil {
+            log.Fatal(&quot;Failed generating ciphers:&quot;, err)
+        }
+        srvPort := strconv.Itoa(config.ServerPort)
+        srvArr := config.GetServerArray()
+        n := len(srvArr)
+        servers.srvCipher = make([]*ServerCipher, n)
+
+        for i, s := range srvArr {
+            if hasPort(s) {
+                log.Println(&quot;ignore server_port option for server&quot;, s)
+                servers.srvCipher[i] = &amp;ServerCipher{s, cipher}
+            } else {
+                servers.srvCipher[i] = &amp;ServerCipher{net.JoinHostPort(s, srvPort), cipher}
+            }
+        }
+    } else {
+        // multiple servers
+        n := len(config.ServerPassword)
+        servers.srvCipher = make([]*ServerCipher, n)
+
+        cipherCache := make(map[string]*ss.Cipher)
+        i := 0
+        for _, serverInfo := range config.ServerPassword {
+            if len(serverInfo) &lt; 2 || len(serverInfo) &gt; 3 {
+                log.Fatalf(&quot;server %v syntax error\n&quot;, serverInfo)
+            }
+            server := serverInfo[0]
+            passwd := serverInfo[1]
+            encmethod := &quot;&quot;
+            if len(serverInfo) == 3 {
+                encmethod = serverInfo[2]
+            }
+            if !hasPort(server) {
+                log.Fatalf(&quot;no port for server %s\n&quot;, server)
+            }
+            // Using &quot;|&quot; as delimiter is safe here, since no encryption
+            // method contains it in the name.
+            cacheKey := encmethod + &quot;|&quot; + passwd
+            cipher, ok := cipherCache[cacheKey]
+            if !ok {
+                var err error
+                cipher, err = ss.NewCipher(encmethod, passwd)
+                if err != nil {
+                    log.Fatal(&quot;Failed generating ciphers:&quot;, err)
+                }
+                cipherCache[cacheKey] = cipher
+            }
+            servers.srvCipher[i] = &amp;ServerCipher{server, cipher}
+            i++
+        }
+    }
+    servers.failCnt = make([]int, len(servers.srvCipher))
+    for _, se := range servers.srvCipher {
+        log.Println(&quot;available remote server&quot;, se.server)
+    }
+    return
+}
+</code></pre><p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
 <p><div id="flowchart-0" class="flow-chart"></div></p>
-<h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">run</span><span class="params">(listenAddr <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	ln, err := net.Listen(<span class="string">"tcp"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	log.Printf(<span class="string">"starting local socks5 server at %v ...\n"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Println(<span class="string">"accept:"</span>, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> handleConnection(conn)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。</p>
+<pre><code class="go">func run(listenAddr string) {
+    ln, err := net.Listen(&quot;tcp&quot;, listenAddr)
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Printf(&quot;starting local socks5 server at %v ...\n&quot;, listenAddr)
+    for {
+        conn, err := ln.Accept()
+        if err != nil {
+            log.Println(&quot;accept:&quot;, err)
+            continue
+        }
+        go handleConnection(conn)
+    }
+}
+</code></pre>
 <p>##结语<br>至此，main函数的整体就差不多，接下来我们需要看下在拿到请求后，handleConnection函数是怎样对其进行处理的。</p>
 <p><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: Start
 op1=>operation: 传入服务器配置信息
@@ -133,7 +270,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjtgyqauj00041x2xloqqmjal" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjth2jfwj0000x42xfsx881el" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -183,11 +320,36 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="方法简单概述"><a href="#方法简单概述" class="headerlink" title="方法简单概述"></a>方法简单概述</h2><p>go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type user struct &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (u user) notify() &#123;</span><br><span class="line">    fmt.Printf(&quot;hello world!&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>ok，其实关于这一篇读书笔记我重点想记录的是接口，关于方法大概声明就是这样，使用的套路和java、php等各种面向对象的语言都是差不多。</p>
+        <h2 id="方法简单概述"><a href="#方法简单概述" class="headerlink" title="方法简单概述"></a>方法简单概述</h2><p>go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。</p>
+<pre><code>type user struct {
+    name string
+    email string
+}
+
+func (u user) notify() {
+    fmt.Printf(&quot;hello world!&quot;)
+}
+</code></pre><p>ok，其实关于这一篇读书笔记我重点想记录的是接口，关于方法大概声明就是这样，使用的套路和java、php等各种面向对象的语言都是差不多。</p>
 <hr>
-<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>go语言中的接口，个人感觉和java，php中这类相比，与实现者之间的联系真的是十分薄弱，其不需要使用任何显式的关键字指明要实现该接口。只要类型绑定了同样的方法就认为其实现了该接口，就可以赋值给该接口类型。也就是说go中需要实现某个接口不需要显式的指明实现哪一个，想实现哪个接口直接编写该方法就可以，不想实现后就删除该方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">type notifier inteface &#123;</span><br><span class="line">    notify()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type user struct&#123;</span><br><span class="line">    name string</span><br><span class="line">    email string</span><br><span class="line">&#125; </span><br><span class="line"></span><br><span class="line">func (u *user) notify()&#123;</span><br><span class="line">    fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,u.name,u.email)</span><br><span class="line">&#125;</span><br><span class="line">//这就可以说user类型实现了notifier 接口</span><br><span class="line">func main（)&#123;</span><br><span class="line">    var n notifier</span><br><span class="line">    n = user&#123;&quot;bill&quot;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<hr>
+<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>go语言中的接口，个人感觉和java，php中这类相比，与实现者之间的联系真的是十分薄弱，其不需要使用任何显式的关键字指明要实现该接口。只要类型绑定了同样的方法就认为其实现了该接口，就可以赋值给该接口类型。也就是说go中需要实现某个接口不需要显式的指明实现哪一个，想实现哪个接口直接编写该方法就可以，不想实现后就删除该方法。</p>
+<pre><code>type notifier inteface {
+    notify()
+}
+
+type user struct{
+    name string
+    email string
+} 
+
+func (u *user) notify(){
+    fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,u.name,u.email)
+}
+//这就可以说user类型实现了notifier 接口
+func main（){
+    var n notifier
+    n = user{&quot;bill&quot;}
+}
+</code></pre><hr>
 <h2 id="接口的内部实现"><a href="#接口的内部实现" class="headerlink" title="接口的内部实现"></a>接口的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/ids8bjg2xxb5yhbk7ecmoh4m/image_1d5llurtkgeq6kr1oln1gj0igdm.png" alt="image_1d5llurtkgeq6kr1oln1gj0igdm.png-126.9kB"></p>
 <p>上图展示了在user类型值赋值后接口变量的值的内部布局。接口值是一个两个字长度的数据结构，第一个字包含一个指向内部表的指针。这个内部表叫iTable，包含了所存储的值的类型信息。iTable包含了已存储的值的类型信息以及与这个值相关联的一组方法。第二个字是一个指向所存储值的指针。</p>
 <p><img src="http://static.zybuluo.com/yiranblade/1qecorn6y0a92pregavnwkoc/image_1d5lmui17tig1l7p1ec91bv31m4k2g.png" alt="image_1d5lmui17tig1l7p1ec91bv31m4k2g.png-128.5kB"></p>
@@ -243,7 +405,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjtgyqaug00021x2xl3buj5in" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjth2jfws0005x42xuhv8uyir" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -289,20 +451,50 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="用户定义的类型"><a href="#用户定义的类型" class="headerlink" title="用户定义的类型"></a>用户定义的类型</h2><p>实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">//go语言写法</span><br><span class="line">type user strut &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string </span><br><span class="line">    ext int</span><br><span class="line">    privileged bool</span><br><span class="line">&#125;</span><br><span class="line">//c语言写法</span><br><span class="line">struct user &#123;</span><br><span class="line">    char *name;</span><br><span class="line">    char *email;</span><br><span class="line">    int ext;</span><br><span class="line">    bool privileged;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>当然c也可以用typedef这个关键字 给予别名使用。</p>
-<p>但是go中的type 定义的类型会被认定为一个新的类型，比如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">type blade int</span><br></pre></td></tr></table></figure></p>
-<p>这个blade会被认为是全新的类型，将int类型赋值给它时会报错，c语言中就仅仅只是个别名的意思，赋值依然可以。</p>
-<p>##内置类型<br>内置类型指的就是数值类型、字符串类型和布尔类型，也就是常说的int，string这类的。因为其是原始类型，所以对其进行增加或者删除都会创建新值，因为其底层结构不共享。<br>action中举了这样一个例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">func Trim(s string, cutset string) string&#123;</span><br><span class="line">    if s == &quot;&quot; || cutset == &quot;&quot;nc&#123;</span><br><span class="line">        return s</span><br><span class="line">    &#125;</span><br><span class="line">    return TrimFunc(s,makeCutsetFunc(cutset))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这个函数对调用者原始的string值的一个副本进行操作，并且返回一个新的string值做副本。字符串就像整数、浮点数和布尔值一样，本质上是一种很原始的数据值，所以在函数或方法内外传递时，要传递字符串的一份副本。</p>
-<h2 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h2><p>go语言中的引用类型有：切片、映射、通道、接口、和函数类型。创建上述类型的变量是共享底层数据结构的。<br>�由于其底层共享结构，所以不需要通过指针来共享引用类型的值，而通过复制来传递引用。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func (ip IP) MarshalText() ([]byte,error)&#123;</span><br><span class="line">    if len(ip) == 0&#123;</span><br><span class="line">        return []byte(&quot;&quot;),nil</span><br><span class="line">    &#125;</span><br><span class="line">    if len(ip) != IPV4len &amp;&amp; len(ip) !=IPv6len&#123;</span><br><span class="line">        return nil,erroes.New(&quot;invalid IP address&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    return []byte(ip.String()),nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>以上代码，正如预期的那样通过复制来传递引用，从而不需要通过指针来共享引用类型的值。</p>
+        <h2 id="用户定义的类型"><a href="#用户定义的类型" class="headerlink" title="用户定义的类型"></a>用户定义的类型</h2><p>实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。</p>
+<pre><code>//go语言写法
+type user strut {
+    name string
+    email string 
+    ext int
+    privileged bool
+}
+//c语言写法
+struct user {
+    char *name;
+    char *email;
+    int ext;
+    bool privileged;
+}
+</code></pre><p>当然c也可以用typedef这个关键字 给予别名使用。</p>
+<p>但是go中的type 定义的类型会被认定为一个新的类型，比如：</p>
+<pre><code>type blade int 
+</code></pre><p>这个blade会被认为是全新的类型，将int类型赋值给它时会报错，c语言中就仅仅只是个别名的意思，赋值依然可以。</p>
+<p>##内置类型<br>内置类型指的就是数值类型、字符串类型和布尔类型，也就是常说的int，string这类的。因为其是原始类型，所以对其进行增加或者删除都会创建新值，因为其底层结构不共享。<br>action中举了这样一个例子：</p>
+<pre><code>func Trim(s string, cutset string) string{
+    if s == &quot;&quot; || cutset == &quot;&quot;nc{
+        return s
+    }
+    return TrimFunc(s,makeCutsetFunc(cutset))
+}
+</code></pre><p>这个函数对调用者原始的string值的一个副本进行操作，并且返回一个新的string值做副本。字符串就像整数、浮点数和布尔值一样，本质上是一种很原始的数据值，所以在函数或方法内外传递时，要传递字符串的一份副本。</p>
+<h2 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h2><p>go语言中的引用类型有：切片、映射、通道、接口、和函数类型。创建上述类型的变量是共享底层数据结构的。<br>�由于其底层共享结构，所以不需要通过指针来共享引用类型的值，而通过复制来传递引用。</p>
+<pre><code>func (ip IP) MarshalText() ([]byte,error){
+    if len(ip) == 0{
+        return []byte(&quot;&quot;),nil
+    }
+    if len(ip) != IPV4len &amp;&amp; len(ip) !=IPv6len{
+        return nil,erroes.New(&quot;invalid IP address&quot;)
+    }
+    return []byte(ip.String()),nil
+}
+</code></pre><p>以上代码，正如预期的那样通过复制来传递引用，从而不需要通过指针来共享引用类型的值。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>go语言中的类型大体上就分为这几类，在其作为方法的参数时，创建新的值就用值接收者，否则就用指针。这就是保持传递的一致性。内置类型与引用类型传递的时候，就需要把握其特性再根据传递原则决定如何使用，比如引用类型因为其底层共享结构，就不用传递指针，仅仅传递引用的副本就可以完成修改值的操作，而内置类型就需要指针。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjtgyqaun00071x2xk7xwc9e1" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjth2jfwt0006x42x1qzq7ycn" class="article-share-link">分享</a>
       
       
     </footer>
@@ -360,7 +552,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjtgyqaut000d1x2xu3aa7m03" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjth2jfwz000cx42xstbxpu2h" class="article-share-link">分享</a>
       
       
     </footer>
@@ -422,7 +614,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjtgyqauo00081x2xwvmja2bc" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjth2jfwy000bx42x7vpn7qgf" class="article-share-link">分享</a>
       
       
     </footer>
@@ -468,12 +660,25 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
         <p>action系列的书感觉还是挺经典的，入手后直接跳过第一章介绍，从第二章开始。在第二章中，其主要以一个搜索的小demo来整体回顾了下go的基础语法，以及鲜明特性，通道，携程之类的，顺读下来感觉对于之前读圣经积累下来的基础是一个十分不错的回顾。</p>
 <h2 id="快速开始一个go程序"><a href="#快速开始一个go程序" class="headerlink" title="快速开始一个go程序"></a>快速开始一个go程序</h2><p>书中的demo是一个从不同数据源中进行搜索的程序，其实现了json与rss这两种格式的读取与搜索，程序的整体架构如下：<br><img src="http://static.zybuluo.com/yiranblade/cyys3bjkuc07sxy558jlc0ch/image_1d4ku4v57nbldgti1b6eb1aok9.png" alt="image_1d4ku4v57nbldgti1b6eb1aok9.png-144.6kB"><br>程序的目录结构分为data，matchers,search三个部分，main一贯作为程序的主入口执行整个程序。<br>从中get到的新的点，感觉就是对于init的使用，预先在各个包中初始化matcher的类型，感觉就像传统面向对象的初始化工厂对象一样。以及对于接口的绑定感觉很有意思，像php，java等对于接口都要使用关键字implements强实现，而go不同，任何一个struct只要绑定了对应方法那么就可以视为其实现了该对象就可以对其赋值，这种弱关联性，对于习惯了php，java那种写法的方式一开始kennel会感觉很不适应但是习惯了，真的感觉很nice，程序写起来就有种用最少的组件做最多的事情的感觉，唯一不爽的就还是觉得代码可读性，没java那么的高，也可能是我习惯了java。</p>
-<h2 id="接口的赋值"><a href="#接口的赋值" class="headerlink" title="接口的赋值"></a>接口的赋值</h2><p>对于一个绑定方法结构体，如果其传入是值的话，则其接口引用类型无论是值还是指针都可以直接调用方法。如果传入的是指针的话，就只可以在接口引用类型是指针的情况下进行方法调用。举例如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 方法声明为使用指向 defaultMatcher 类型值的指针作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = dm // 将值赋值给接口类型 matcher.Search(feed, "test") // 使用值来调用接口方法</span><br><span class="line">&gt; <span class="keyword">go</span> build</span><br><span class="line">cannot use dm (<span class="keyword">type</span> defaultMatcher) as <span class="keyword">type</span> Matcher in assignment</span><br><span class="line"><span class="comment">// 方法声明为使用 defaultMatcher 类型的值作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = &amp;dm // 将指针赋值给接口类型 matcher.Search(feed, "test") // 使用指针来调用接口方法</span><br></pre></td></tr></table></figure></p>
+<h2 id="接口的赋值"><a href="#接口的赋值" class="headerlink" title="接口的赋值"></a>接口的赋值</h2><p>对于一个绑定方法结构体，如果其传入是值的话，则其接口引用类型无论是值还是指针都可以直接调用方法。如果传入的是指针的话，就只可以在接口引用类型是指针的情况下进行方法调用。举例如下：</p>
+<pre><code class="go">// 方法声明为使用指向 defaultMatcher 类型值的指针作为接收者
+func (m *defaultMatcher) Search(feed *Feed, searchTerm string)
+// 通过 interface 类型的值来调用方法
+var dm defaultMatcher
+var matcher Matcher = dm // 将值赋值给接口类型 matcher.Search(feed, &quot;test&quot;) // 使用值来调用接口方法
+&gt; go build
+cannot use dm (type defaultMatcher) as type Matcher in assignment
+// 方法声明为使用 defaultMatcher 类型的值作为接收者
+func (m defaultMatcher) Search(feed *Feed, searchTerm string)
+// 通过 interface 类型的值来调用方法
+var dm defaultMatcher
+var matcher Matcher = &amp;dm // 将指针赋值给接口类型 matcher.Search(feed, &quot;test&quot;) // 使用指针来调用接口方法
+</code></pre>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjtgyqav4000e1x2xjrj1ggfp" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjth2jfwv0007x42xat72120v" class="article-share-link">分享</a>
       
       
     </footer>
@@ -525,7 +730,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjtgyqaua00001x2xvz1c7ncw" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjth2jfwo0002x42x9fb3ybqo" class="article-share-link">分享</a>
       
       
     </footer>
@@ -570,41 +775,82 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <div class="article-entry" itemprop="articleBody">
       
         <p>能够在运行时更新变量和检查它们的值、调用它们的方法和它们支持的内在操作，而不需要在编译时就知道这些变量的具体类型。这种机制被称为反射。go语言中对于反射的定义与java中并无太大差别，基本核心都是在运行时更新变量调用方法之类的。<br>换句话说就是反射允许在编译期间不知道变量或者接口的名称，字段、方法，值的情况下在运行时检查类、接口字段和方法以及他们的值。</p>
-<h2 id="go中的反射"><a href="#go中的反射" class="headerlink" title="go中的反射"></a>go中的反射</h2><p>go中的反射主要由reflect包来提供。其定义两个比较重要的类型，Type与Value，一个type表示一个go类型。<br>其拥有一个函数typeof,该函数接受人意的interface{}类型，并以reflect.Type形式返回动态类型：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">t := reflext.Typeof(3)</span><br></pre></td></tr></table></figure></p>
-<p>在调用typeof函数的过程中，其会将一个具体的值转换为接口类型，并且拥有一个隐式的接口转换操作，创建包含两个信息的接口值：操作数的动态类型和其动态值。<br>em…还有一个比较重要的类型是刚才说到的Value，函数reflect.ValueOf接受任意的interface{}类型，并返回一个装载着其动态值的reflexct.Value和reflect.TypeOf类似，reflect。.ValueOf返回的结构也是具体的类型，但是reflect.Value也可以持有一个接口值.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v := reflect.ValueOf(3)</span><br></pre></td></tr></table></figure></p>
-<h2 id="go反射原理"><a href="#go反射原理" class="headerlink" title="go反射原理"></a>go反射原理</h2><p>无意中在网上好多blog看到一个概念，go语言的三大反射定律，查了半天也没找到出处，但是总结的还是可以的，了解后对于go的反射机制应该说可以有一个总的了解，使用起来也简单很多。</p>
+<h2 id="go中的反射"><a href="#go中的反射" class="headerlink" title="go中的反射"></a>go中的反射</h2><p>go中的反射主要由reflect包来提供。其定义两个比较重要的类型，Type与Value，一个type表示一个go类型。<br>其拥有一个函数typeof,该函数接受人意的interface{}类型，并以reflect.Type形式返回动态类型：</p>
+<pre><code>t := reflext.Typeof(3)
+</code></pre><p>在调用typeof函数的过程中，其会将一个具体的值转换为接口类型，并且拥有一个隐式的接口转换操作，创建包含两个信息的接口值：操作数的动态类型和其动态值。<br>em…还有一个比较重要的类型是刚才说到的Value，函数reflect.ValueOf接受任意的interface{}类型，并返回一个装载着其动态值的reflexct.Value和reflect.TypeOf类似，reflect。.ValueOf返回的结构也是具体的类型，但是reflect.Value也可以持有一个接口值.</p>
+<pre><code>v := reflect.ValueOf(3) 
+</code></pre><h2 id="go反射原理"><a href="#go反射原理" class="headerlink" title="go反射原理"></a>go反射原理</h2><p>无意中在网上好多blog看到一个概念，go语言的三大反射定律，查了半天也没找到出处，但是总结的还是可以的，了解后对于go的反射机制应该说可以有一个总的了解，使用起来也简单很多。</p>
 <ul>
-<li>Reflection goes from interface value to reflection object（从接口值映射到反射对象）<ul>
-<li>这一点感觉很好理解：<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">a:=<span class="number">5</span></span><br><span class="line">b:=reflect.ValueOf(a)</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<pre><code>调用valueOf方法时，go语言这里会对a进行一个隐式的接口转换操作，�且创建一个包含两个信息的接口值：操作数的动态类型(int)和其动态的值（这里是5）。随后其会返回一个value的对象。
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">// ValueOf returns a new Value initialized to the concrete value</span></span><br><span class="line"><span class="comment">// stored in the interface i. ValueOf(nil) returns the zero Value.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ValueOf</span><span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">Value</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> i == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> Value&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// <span class="doctag">TODO:</span> Maybe allow contents of a Value to live on the stack.</span></span><br><span class="line">	<span class="comment">// For now we make the contents always escape to the heap. It</span></span><br><span class="line">	<span class="comment">// makes life easier in a few places (see chanrecv/mapassign</span></span><br><span class="line">	<span class="comment">// comment below).</span></span><br><span class="line">	escapes(i)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> unpackEface(i)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<li><p>Reflection goes from interface value to reflection object（从接口值映射到反射对象）</p>
+<ul>
+<li><p>这一点感觉很好理解：</p>
+<pre><code class="go">a:=5
+b:=reflect.ValueOf(a)
+</code></pre>
+<p>调用valueOf方法时，go语言这里会对a进行一个隐式的接口转换操作，�且创建一个包含两个信息的接口值：操作数的动态类型(int)和其动态的值（这里是5）。随后其会返回一个value的对象。</p>
+<pre><code class="go">// ValueOf returns a new Value initialized to the concrete value
+// stored in the interface i. ValueOf(nil) returns the zero Value.
+func ValueOf(i interface{}) Value {
+if i == nil {
+  return Value{}
+}
 
-在value对象中包含了该变量的动态类型描述信息，指向其值的指针类型，以及一个检测值是否支持某些操作的flag。
-利用value对象，valueOf的调用者，即可进行进一步操作，获取值，类型信息，修改变量值等等。这个value就是第一反射定律里指的`reflection object`,typeOf()方法同理。
-</code></pre><hr>
+// TODO: Maybe allow contents of a Value to live on the stack.
+// For now we make the contents always escape to the heap. It
+// makes life easier in a few places (see chanrecv/mapassign
+// comment below).
+escapes(i)
+
+return unpackEface(i)
+}
+</code></pre>
+<p>在value对象中包含了该变量的动态类型描述信息，指向其值的指针类型，以及一个检测值是否支持某些操作的flag。<br>利用value对象，valueOf的调用者，即可进行进一步操作，获取值，类型信息，修改变量值等等。这个value就是第一反射定律里指的<code>reflection object</code>,typeOf()方法同理。</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
 <ul>
 <li><p>Reflection goes from reflection object to interface value( 从反射对象映射到接口值)</p>
 <ul>
 <li><p>这句话顾名思义，是前一个定律的逆</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">c := b.Interface()</span><br></pre></td></tr></table></figure>
+<pre><code class="go">c := b.Interface()
+
+</code></pre>
 <p>调用之前的b这个Value对象的Interface方法，其内部执行过程如下：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">// Interface returns v's current value as an interface&#123;&#125;.</span></span><br><span class="line"><span class="comment">// It is equivalent to:</span></span><br><span class="line"><span class="comment">//	var i interface&#123;&#125; = (v's underlying value)</span></span><br><span class="line"><span class="comment">// It panics if the Value was obtained by accessing</span></span><br><span class="line"><span class="comment">// unexported struct fields.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(v Value)</span> <span class="title">Interface</span><span class="params">()</span> <span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> valueInterface(v, <span class="literal">true</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="go">// Interface returns v&#39;s current value as an interface{}.
+// It is equivalent to:
+//    var i interface{} = (v&#39;s underlying value)
+// It panics if the Value was obtained by accessing
+// unexported struct fields.
+func (v Value) Interface() (i interface{}) {
+return valueInterface(v, true)
+}
+</code></pre>
+<p>可以看到其将value又转换回接受任意的interface{}类型，打印一下其结果为:</p>
+<pre><code>a := 5
+b := reflect.ValueOf(a)
+c := b.Interface()
+fmt.Println(c)
+//5
+</code></pre><p>综上来看，Interface方法就是Valueof方法的逆，返回值是interface{}，网上看到这样一句话：反射就是从接口值到反射对象，然后再反射回来。</p>
 </li>
 </ul>
 </li>
 </ul>
-<p>可以看到其将value又转换回接受任意的interface{}类型，打印一下其结果为:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">   a := 5</span><br><span class="line">b := reflect.ValueOf(a)</span><br><span class="line">c := b.Interface()</span><br><span class="line">fmt.Println(c)</span><br><span class="line">//5</span><br></pre></td></tr></table></figure></p>
-<p>综上来看，Interface方法就是Valueof方法的逆，返回值是interface{}，网上看到这样一句话：反射就是从接口值到反射对象，然后再反射回来。</p>
 <hr>
 <ul>
 <li>To modify a reflection object, the value must be settable（为了修改一个反射对象，修改的值必须是settable）</li>
 </ul>
-<p>有时候会需要修改反射对象的值，但是直接reflect.ValueOf出来的是不可取地址的，可以被修改的变量称为settable，即可取地址。如果需要从变量中取到可取地址的value需要这么做：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">x := 2</span><br><span class="line">d := reflect.ValueOf(&amp;x).Elem()   // d refers to the variable x</span><br><span class="line">px := d.Addr().Interface().(*int) // px := &amp;x</span><br><span class="line">*px = 3                           // x = 3</span><br><span class="line">fmt.Println(x)   </span><br><span class="line">//另一种做法是</span><br><span class="line">d.Set(reflect.ValueOf(8))</span><br></pre></td></tr></table></figure></p>
-<p>之所以不可以直接修改反射对象的值，是因为直接reflect.Valueof的值仅仅只是变量的一个副本，对其进行操作是无法修改变量本身的。</p>
+<p>有时候会需要修改反射对象的值，但是直接reflect.ValueOf出来的是不可取地址的，可以被修改的变量称为settable，即可取地址。如果需要从变量中取到可取地址的value需要这么做：</p>
+<pre><code>x := 2
+d := reflect.ValueOf(&amp;x).Elem()   // d refers to the variable x
+px := d.Addr().Interface().(*int) // px := &amp;x
+*px = 3                           // x = 3
+fmt.Println(x)   
+//另一种做法是
+d.Set(reflect.ValueOf(8))
+</code></pre><p>之所以不可以直接修改反射对象的值，是因为直接reflect.Valueof的值仅仅只是变量的一个副本，对其进行操作是无法修改变量本身的。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于go中的反射，这里探讨的还是比较基础的，但是整体用法无外乎这些，剩下的就是具体对于调用方法与函数，map以及slices等的使用，本质上的结构还是不会有太大变化的，比如结构体使用实际上就是用同样的方法去访问其中的每个域。最后对于反射这一特性，《go程序设计语言》在反射一章的最后认为应该被谨慎小心的使用，原因主要有以下三点：</p>
 <ol>
 <li>基于反射的代码是比较脆弱的。如果误用，编译器不会马上报错，在运行阶段造成的错误很可能是比较致命的。</li>
@@ -615,7 +861,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjtgyqauq00091x2xvn43bgra" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjth2jfx0000fx42xl0a7h0at" class="article-share-link">分享</a>
       
       
     </footer>
@@ -709,11 +955,13 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     
   </div>
 </footer>
+
     </div>
     
 
 <script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="//apps.bdimg.com/libs/wow/0.1.6/wow.min.js"></script>
+
 <script>
 new WOW().init();
 </script>   
@@ -774,6 +1022,17 @@ new WOW().init();
   </ul>
 </section>
 <script src="/js/script.js"></script>
+
+
+
+<script src="/plugins/prettify/prettify.js"></script>
+<script type="text/javascript">
+$(window).load(function(){
+$('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto;');
+ prettyPrint();
+})
+</script>
+
 
 
 
