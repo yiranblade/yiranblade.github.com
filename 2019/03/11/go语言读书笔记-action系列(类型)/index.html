@@ -6,13 +6,14 @@
   <title>go语言读书笔记-action系列(类型) | yiranblade&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="用户定义的类型实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。1234567891011121314//go语言写法type user strut &amp;#123;    name string    email string     ext int    privileged bool&amp;#12">
+<meta name="keywords" content="go数据类型">
 <meta property="og:type" content="article">
 <meta property="og:title" content="go语言读书笔记-action系列(类型)">
 <meta property="og:url" content="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/index.html">
 <meta property="og:site_name" content="yiranblade&#39;s blog">
 <meta property="og:description" content="用户定义的类型实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。1234567891011121314//go语言写法type user strut &amp;#123;    name string    email string     ext int    privileged bool&amp;#12">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-11T03:07:23.898Z">
+<meta property="og:updated_time" content="2019-03-28T12:45:00.237Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="go语言读书笔记-action系列(类型)">
 <meta name="twitter:description" content="用户定义的类型实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。1234567891011121314//go语言写法type user strut &amp;#123;    name string    email string     ext int    privileged bool&amp;#12">
@@ -42,9 +43,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>10</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>2</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>1</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>11</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -91,6 +92,10 @@
 
         <div>
           
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+  </div>
+
           
               
 
@@ -100,22 +105,24 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="用户定义的类型"><a href="#用户定义的类型" class="headerlink" title="用户定义的类型"></a>用户定义的类型</h2><p>实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//go语言写法</span></span><br><span class="line">type user strut &#123;</span><br><span class="line">    name <span class="built_in">string</span></span><br><span class="line">    email <span class="built_in">string</span> </span><br><span class="line">    ext <span class="keyword">int</span></span><br><span class="line">    privileged <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//c语言写法</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">user</span> &#123;</span></span><br><span class="line">    <span class="keyword">char</span> *name;</span><br><span class="line">    <span class="keyword">char</span> *email;</span><br><span class="line">    <span class="keyword">int</span> ext;</span><br><span class="line">    <span class="keyword">bool</span> privileged;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+        <h2 id="用户定义的类型"><a href="#用户定义的类型" class="headerlink" title="用户定义的类型"></a>用户定义的类型</h2><p>实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">//go语言写法</span><br><span class="line">type user strut &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string </span><br><span class="line">    ext int</span><br><span class="line">    privileged bool</span><br><span class="line">&#125;</span><br><span class="line">//c语言写法</span><br><span class="line">struct user &#123;</span><br><span class="line">    char *name;</span><br><span class="line">    char *email;</span><br><span class="line">    int ext;</span><br><span class="line">    bool privileged;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>当然c也可以用typedef这个关键字 给予别名使用。</p>
-<p>但是go中的type 定义的类型会被认定为一个新的类型，比如：<br><figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> <span class="type">blade </span>int</span><br></pre></td></tr></table></figure></p>
+<p>但是go中的type 定义的类型会被认定为一个新的类型，比如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">type blade int</span><br></pre></td></tr></table></figure></p>
 <p>这个blade会被认为是全新的类型，将int类型赋值给它时会报错，c语言中就仅仅只是个别名的意思，赋值依然可以。</p>
-<p>##内置类型<br>内置类型指的就是数值类型、字符串类型和布尔类型，也就是常说的int，string这类的。因为其是原始类型，所以对其进行增加或者删除都会创建新值，因为其底层结构不共享。<br>action中举了这样一个例子：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Trim</span><span class="params">(s <span class="keyword">string</span>, cutset <span class="keyword">string</span>)</span> <span class="title">string</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> s == <span class="string">""</span> || cutset == <span class="string">""</span>nc&#123;</span><br><span class="line">        <span class="keyword">return</span> s</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> TrimFunc(s,makeCutsetFunc(cutset))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>##内置类型<br>内置类型指的就是数值类型、字符串类型和布尔类型，也就是常说的int，string这类的。因为其是原始类型，所以对其进行增加或者删除都会创建新值，因为其底层结构不共享。<br>action中举了这样一个例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">func Trim(s string, cutset string) string&#123;</span><br><span class="line">    if s == &quot;&quot; || cutset == &quot;&quot;nc&#123;</span><br><span class="line">        return s</span><br><span class="line">    &#125;</span><br><span class="line">    return TrimFunc(s,makeCutsetFunc(cutset))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>这个函数对调用者原始的string值的一个副本进行操作，并且返回一个新的string值做副本。字符串就像整数、浮点数和布尔值一样，本质上是一种很原始的数据值，所以在函数或方法内外传递时，要传递字符串的一份副本。</p>
-<h2 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h2><p>go语言中的引用类型有：切片、映射、通道、接口、和函数类型。创建上述类型的变量是共享底层数据结构的。<br>�由于其底层共享结构，所以不需要通过指针来共享引用类型的值，而通过复制来传递引用。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ip IP)</span> <span class="title">MarshalText</span><span class="params">()</span> <span class="params">([]<span class="keyword">byte</span>,error)</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(ip) == <span class="number">0</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> []<span class="keyword">byte</span>(<span class="string">""</span>),<span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(ip) != IPV4len &amp;&amp; <span class="built_in">len</span>(ip) !=IPv6len&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>,erroes.New(<span class="string">"invalid IP address"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> []<span class="keyword">byte</span>(ip.String()),<span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h2><p>go语言中的引用类型有：切片、映射、通道、接口、和函数类型。创建上述类型的变量是共享底层数据结构的。<br>�由于其底层共享结构，所以不需要通过指针来共享引用类型的值，而通过复制来传递引用。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func (ip IP) MarshalText() ([]byte,error)&#123;</span><br><span class="line">    if len(ip) == 0&#123;</span><br><span class="line">        return []byte(&quot;&quot;),nil</span><br><span class="line">    &#125;</span><br><span class="line">    if len(ip) != IPV4len &amp;&amp; len(ip) !=IPv6len&#123;</span><br><span class="line">        return nil,erroes.New(&quot;invalid IP address&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    return []byte(ip.String()),nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>以上代码，正如预期的那样通过复制来传递引用，从而不需要通过指针来共享引用类型的值。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>go语言中的类型大体上就分为这几类，在其作为方法的参数时，创建新的值就用值接收者，否则就用指针。这就是保持传递的一致性。内置类型与引用类型传递的时候，就需要把握其特性再根据传递原则决定如何使用，比如引用类型因为其底层共享结构，就不用传递指针，仅仅传递引用的副本就可以完成修改值的操作，而内置类型就需要指针。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjtsmgqbf00084m2xn25y4ylb" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjtsmtthk000dbn2x0nzli5co" class="article-share-link">分享</a>
       
       
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go数据类型/">go数据类型</a></li></ul>
+
     </footer>
   </div>
   
@@ -183,9 +190,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>10</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>2</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>1</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>11</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
     </div>
 
 

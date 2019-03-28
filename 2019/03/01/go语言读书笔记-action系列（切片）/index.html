@@ -6,6 +6,7 @@
   <title>go语言读书笔记-action系列（切片） | yiranblade&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
+<meta name="keywords" content="go切片">
 <meta property="og:type" content="article">
 <meta property="og:title" content="go语言读书笔记-action系列（切片）">
 <meta property="og:url" content="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/index.html">
@@ -13,7 +14,7 @@
 <meta property="og:description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png">
-<meta property="og:updated_time" content="2019-03-01T02:48:56.284Z">
+<meta property="og:updated_time" content="2019-03-28T12:47:36.578Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="go语言读书笔记-action系列（切片）">
 <meta name="twitter:description" content="go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需">
@@ -44,9 +45,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>10</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>2</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>1</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>11</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -93,6 +94,10 @@
 
         <div>
           
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+  </div>
+
           
               
 
@@ -120,9 +125,11 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjtsmgqbo000e4m2xmoyxpm3x" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjtsmtthp000ibn2xl91dr27x" class="article-share-link">分享</a>
       
       
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go切片/">go切片</a></li></ul>
+
     </footer>
   </div>
   
@@ -190,9 +197,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>10</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>2</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>1</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>11</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
     </div>
 
 
