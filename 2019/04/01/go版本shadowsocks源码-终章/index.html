@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>go版本shadowsocks源码-终章 | yiranblade&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本节我们来看一下shadowsocks-server端的源码。server端相比local端要简单不少，其所做的主要工作就是解码请求并返回结果。 main照例我们从main函数开始分析其大致流程。123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555">
+<meta name="keywords" content="shadowsocks源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go版本shadowsocks源码-终章">
+<meta property="og:url" content="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/index.html">
+<meta property="og:site_name" content="yiranblade&#39;s blog">
+<meta property="og:description" content="本节我们来看一下shadowsocks-server端的源码。server端相比local端要简单不少，其所做的主要工作就是解码请求并返回结果。 main照例我们从main函数开始分析其大致流程。123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-04-01T09:08:21.577Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="go版本shadowsocks源码-终章">
+<meta name="twitter:description" content="本节我们来看一下shadowsocks-server端的源码。server端相比local端要简单不少，其所做的主要工作就是解码请求并返回结果。 main照例我们从main函数开始分析其大致流程。123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555">
+  
+    <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/plugin/bganimation/bg.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <div class="widget-wrap mobile-header">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+    </div>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+        <section id="main"><article id="post-go版本shadowsocks源码-终章" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/01/go版本shadowsocks源码-终章/" class="article-date">
+  <time class="post-time" datetime="2019-04-01T09:00:52.000Z" itemprop="datePublished">
+    <span class="post-month">4月</span><br>
+    <span class="post-day">01</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      go版本shadowsocks源码-终章
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/源码/">源码</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本节我们来看一下shadowsocks-server端的源码。server端相比local端要简单不少，其所做的主要工作就是解码请求并返回结果。</p>
+<h2 id="main"><a href="#main" class="headerlink" title="main"></a>main</h2><p>照例我们从main函数开始分析其大致流程。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	log.SetOutput(os.Stdout)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> cmdConfig ss.Config</span><br><span class="line">	<span class="keyword">var</span> printVer <span class="keyword">bool</span></span><br><span class="line">	<span class="keyword">var</span> core <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line">	flag.BoolVar(&amp;printVer, <span class="string">"version"</span>, <span class="literal">false</span>, <span class="string">"print version"</span>)</span><br><span class="line">	flag.StringVar(&amp;configFile, <span class="string">"c"</span>, <span class="string">"config.json"</span>, <span class="string">"specify config file"</span>)</span><br><span class="line">	flag.StringVar(&amp;cmdConfig.Password, <span class="string">"k"</span>, <span class="string">""</span>, <span class="string">"password"</span>)</span><br><span class="line">	flag.IntVar(&amp;cmdConfig.ServerPort, <span class="string">"p"</span>, <span class="number">0</span>, <span class="string">"server port"</span>)</span><br><span class="line">	flag.IntVar(&amp;cmdConfig.Timeout, <span class="string">"t"</span>, <span class="number">300</span>, <span class="string">"timeout in seconds"</span>)</span><br><span class="line">	flag.StringVar(&amp;cmdConfig.Method, <span class="string">"m"</span>, <span class="string">""</span>, <span class="string">"encryption method, default: aes-256-cfb"</span>)</span><br><span class="line">	flag.IntVar(&amp;core, <span class="string">"core"</span>, <span class="number">0</span>, <span class="string">"maximum number of CPU cores to use, default is determinied by Go runtime"</span>)</span><br><span class="line">	flag.BoolVar((*<span class="keyword">bool</span>)(&amp;debug), <span class="string">"d"</span>, <span class="literal">false</span>, <span class="string">"print debug message"</span>)</span><br><span class="line">	flag.BoolVar((*<span class="keyword">bool</span>)(&amp;sanitizeIps), <span class="string">"A"</span>, <span class="literal">false</span>, <span class="string">"anonymize client ip addresses in all output"</span>)</span><br><span class="line">	flag.BoolVar(&amp;udp, <span class="string">"u"</span>, <span class="literal">false</span>, <span class="string">"UDP Relay"</span>)</span><br><span class="line">	flag.StringVar(&amp;managerAddr, <span class="string">"manager-address"</span>, <span class="string">""</span>, <span class="string">"shadowsocks manager listening address"</span>)</span><br><span class="line">	flag.Parse()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> printVer &#123;</span><br><span class="line">		ss.PrintVersion()</span><br><span class="line">		os.Exit(<span class="number">0</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ss.SetDebug(debug)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	config, err = ss.ParseConfig(configFile)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> !os.IsNotExist(err) &#123;</span><br><span class="line">			fmt.Fprintf(os.Stderr, <span class="string">"error reading %s: %v\n"</span>, configFile, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		config = &amp;cmdConfig</span><br><span class="line">		ss.UpdateConfig(config, config)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		ss.UpdateConfig(config, &amp;cmdConfig)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> config.Method == <span class="string">""</span> &#123;</span><br><span class="line">		config.Method = <span class="string">"aes-256-cfb"</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err = ss.CheckCipherMethod(config.Method); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Fprintln(os.Stderr, err)</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err = unifyPortPassword(config); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> core &gt; <span class="number">0</span> &#123;</span><br><span class="line">		runtime.GOMAXPROCS(core)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> port, password := <span class="keyword">range</span> config.PortPassword &#123;</span><br><span class="line">		<span class="keyword">go</span> run(port, password)</span><br><span class="line">		<span class="keyword">if</span> udp &#123;</span><br><span class="line">			<span class="keyword">go</span> runUDP(port, password)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> managerAddr != <span class="string">""</span> &#123;</span><br><span class="line">		addr, err := net.ResolveUDPAddr(<span class="string">"udp"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Can't resolve address: "</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		conn, err := net.ListenUDP(<span class="string">"udp"</span>, addr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Error listening:"</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">"manager listening udp addr %v ...\n"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">defer</span> conn.Close()</span><br><span class="line">		<span class="keyword">go</span> managerDaemon(conn)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	waitSignal()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从以上代码中可以看到，server端main函数大体也分成三个部分，第一个部分负责处理一系列的配置文件解析，参数校验等。第二部分处理连接请求。第三部分为对server启动后进行的实时线上管理进行操作。</p>
+<h2 id="参数解析"><a href="#参数解析" class="headerlink" title="参数解析"></a>参数解析</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">   flag.BoolVar(&amp;printVer, <span class="string">"version"</span>, <span class="literal">false</span>, <span class="string">"print version"</span>)</span><br><span class="line">flag.StringVar(&amp;configFile, <span class="string">"c"</span>, <span class="string">"config.json"</span>, <span class="string">"specify config file"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Password, <span class="string">"k"</span>, <span class="string">""</span>, <span class="string">"password"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.ServerPort, <span class="string">"p"</span>, <span class="number">0</span>, <span class="string">"server port"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.Timeout, <span class="string">"t"</span>, <span class="number">300</span>, <span class="string">"timeout in seconds"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Method, <span class="string">"m"</span>, <span class="string">""</span>, <span class="string">"encryption method, default: aes-256-cfb"</span>)</span><br><span class="line">flag.IntVar(&amp;core, <span class="string">"core"</span>, <span class="number">0</span>, <span class="string">"maximum number of CPU cores to use, default is determinied by Go runtime"</span>)</span><br><span class="line">flag.BoolVar((*<span class="keyword">bool</span>)(&amp;debug), <span class="string">"d"</span>, <span class="literal">false</span>, <span class="string">"print debug message"</span>)</span><br><span class="line">flag.BoolVar((*<span class="keyword">bool</span>)(&amp;sanitizeIps), <span class="string">"A"</span>, <span class="literal">false</span>, <span class="string">"anonymize client ip addresses in all output"</span>)</span><br><span class="line">flag.BoolVar(&amp;udp, <span class="string">"u"</span>, <span class="literal">false</span>, <span class="string">"UDP Relay"</span>)</span><br><span class="line">flag.StringVar(&amp;managerAddr, <span class="string">"manager-address"</span>, <span class="string">""</span>, <span class="string">"shadowsocks manager listening address"</span>)</span><br><span class="line">flag.Parse()</span><br></pre></td></tr></table></figure>
+<p>这一部分个人感觉其实没什么，设置项目基本和local端保持一致。其中对于c pu的设置这里需要提一下，这是对于goroutine的设置，表示对于go逻辑处理器的分配。以及增加对于server运行时的管理设置。</p>
+<h2 id="处理连接请求"><a href="#处理连接请求" class="headerlink" title="处理连接请求"></a>处理连接请求</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> port, password := <span class="keyword">range</span> config.PortPassword &#123;</span><br><span class="line">		<span class="keyword">go</span> run(port, password)</span><br><span class="line">		<span class="keyword">if</span> udp &#123;</span><br><span class="line">			<span class="keyword">go</span> runUDP(port, password)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>正如代码1-6行所示，根据配置的情况，server会处理多个端口的请求。由于支持了udp的socks代理加入udp判断，如果设置了udp转发，则进行udp的代理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">func run(port, password string) &#123;</span><br><span class="line">	ln, err := net.Listen(&quot;tcp&quot;, &quot;:&quot;+port)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Printf(&quot;error listening port %v: %v\n&quot;, port, err)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">	passwdManager.add(port, password, ln)</span><br><span class="line">	var cipher *ss.Cipher</span><br><span class="line">	log.Printf(&quot;server listening port %v ...\n&quot;, port)</span><br><span class="line">	for &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			// listener maybe closed to update password</span><br><span class="line">			debug.Printf(&quot;accept error: %v\n&quot;, err)</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		// Creating cipher upon first connection.</span><br><span class="line">		if cipher == nil &#123;</span><br><span class="line">			log.Println(&quot;creating cipher for port:&quot;, port)</span><br><span class="line">			cipher, err = ss.NewCipher(config.Method, password)</span><br><span class="line">			if err != nil &#123;</span><br><span class="line">				log.Printf(&quot;Error generating cipher for port: %s %v\n&quot;, port, err)</span><br><span class="line">				conn.Close()</span><br><span class="line">				continue</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		go handleConnection(ss.NewConn(conn, cipher.Copy()), port)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>run()函数主要负责监听本地接口等待连接，随后启动一个goroutine 来执行handleConnection()处理到来的连接请求。</p>
+<h3 id="handleConnection"><a href="#handleConnection" class="headerlink" title="handleConnection"></a>handleConnection</h3><p>server对于请求的处理流程与local几乎相同，除了记录的日志信息不同。首先获取请求的目标地址，然后进行连接请求，最后创建两个PipeThenClose进行上行下行数据的传输，同时进行对数据的解密操作。整体流程如下：</p>
+<div id="flowchart-0" class="flow-chart"></div>
+
+<h2 id="manager"><a href="#manager" class="headerlink" title="manager"></a>manager</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> managerAddr != <span class="string">""</span> &#123;</span><br><span class="line">		addr, err := net.ResolveUDPAddr(<span class="string">"udp"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Can't resolve address: "</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		conn, err := net.ListenUDP(<span class="string">"udp"</span>, addr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Error listening:"</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">"manager listening udp addr %v ...\n"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">defer</span> conn.Close()</span><br><span class="line">		<span class="keyword">go</span> managerDaemon(conn)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>对于shadowsocks的管理如果进行了设置，则会使用一个goroutine执行managerDaemon（）进行守护相关端口的监听，返回shadowsocks的运行情况。其中包括其流量连接情况：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, addr := <span class="keyword">range</span> reportconnSet &#123;</span><br><span class="line">					res := reportStat()</span><br><span class="line">					<span class="keyword">if</span> <span class="built_in">len</span>(res) == <span class="number">0</span> &#123;</span><br><span class="line">						<span class="keyword">continue</span></span><br><span class="line">					&#125;</span><br><span class="line">					conn.WriteToUDP(res, addr)</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以使用的管理命令包括增加端口，删除端口，ping远程地址，停止ping等。相关代码如下：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">switch</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"add:"</span>):</span><br><span class="line">			res = handleAddPort(bytes.Trim(data[<span class="number">4</span>:], <span class="string">"\x00\r\n "</span>))</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"remove:"</span>):</span><br><span class="line">			res = handleRemovePort(bytes.Trim(data[<span class="number">7</span>:], <span class="string">"\x00\r\n "</span>))</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"ping"</span>):</span><br><span class="line">			conn.WriteToUDP(handlePing(), remote)</span><br><span class="line">			reportconnSet[remote.String()] = remote <span class="comment">// append the host into the report list</span></span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"ping-stop"</span>): <span class="comment">// add the stop ping command</span></span><br><span class="line">			conn.WriteToUDP(handlePing(), remote)</span><br><span class="line">			<span class="built_in">delete</span>(reportconnSet, remote.String())</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>在main函数的最后，设置了一个waitSignal()用来等待Signal信号从而进行程序结束�前的收尾操作，当捕捉到该信号后进行updatePasswd等收尾操作。<br>至此整个shadowsocks的源码，大体上就分析完了。由于想基于一种全局的观点，所以一些极其细节的代码没有去阅读，重点其实还是在理解go语言在实际项目中的一些应用。<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
+op1=>operation: getRequest()获取请求目标地址
+op2=>operation: net.Dial()请求目标地址建立连接
+op3=>operation: ss.PipeThenClose()创建goroutine将数据发送到目的地
+op4=>operation: ss.PipeThenClost()将将目的地的返回数据写入请求端
+ed=>end: 结束
+st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjty4sytf0006gl2x9p2d99le" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/shadowsocks源码/">shadowsocks源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/03/28/go版本shadowsocks源码-(二)/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">go版本shadowsocks源码(二)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <h1 class="blog-title">yiranblade&#39;s blog</h1>
+    <h2 class="blog-subtitle"></h2>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+    </div>
+
+
+
+    <div class="social-link">
+      
+        <a class="hvr-bounce-in" href="http://github.com/yiranblade" target="_blank" title="Github">
+          Github
+        </a>
+      
+    </div>
+
+    <div class="friend-link">
+      <h2>友情链接</h2>
+      
+        <a class="hvr-bounce-in" href="http://blog.yiranblade.cn/" target="_blank" title="ShanaMaid">
+          ShanaMaid
+        </a>
+      
+    </div>
+  </div>
+</div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy;2018 - 2019 yiranblade&#39;s blog<br>
+      由<a href="http://hexo.io/" target="_blank">Hexo</a>强力驱动 | 
+      主题-<a href="https://github.com/ShanaMaid/hexo-theme-shana">Shana</a>
+      
+    </div>
+    
+  </div>
+</footer>
+
+    </div>
+    
+
+<script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//apps.bdimg.com/libs/wow/0.1.6/wow.min.js"></script>
+
+<script>
+new WOW().init();
+</script>   
+
+
+  <link rel="stylesheet" href="/plugin/fancybox/jquery.fancybox.css">
+  <script src="/plugin/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+  <link rel="stylesheet" href="/plugin/galmenu/GalMenu.css">
+  <script src="/plugin/galmenu/GalMenu.js"></script>
+  <div class="GalMenu GalDropDown">
+      <div class="circle" id="gal">
+        <div class="ring">
+          
+            <a href="/" title class="menuItem">首页</a>
+          
+            <a href="/tags" title class="menuItem">标签</a>
+          
+            <a href="/categories" title class="menuItem">分类</a>
+          
+            <a href="/archives" title class="menuItem">归档</a>
+          
+            <a href="/xxxxxxxxx" title class="menuItem">xxx</a>
+          
+            <a href="/xxxxxxx" title class="menuItem">xxxx</a>
+          
+        </div>
+        
+          <audio id="audio" src="#"></audio>
+        
+      </div> 
+</div>
+<div id="overlay" style="opacity: 1; cursor: pointer;"></div>
+  <script type="text/javascript">var items = document.querySelectorAll('.menuItem');
+    for (var i = 0,
+    l = items.length; i < l; i++) {
+      items[i].style.left = (50 - 35 * Math.cos( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%";
+      items[i].style.top = (50 + 35 * Math.sin( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%"
+    }</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('body').GalMenu({
+      'menu': 'GalDropDown'
+    })
+  });
+</script>
+
+  <section class="hidden-xs"> 
+  <ul class="cb-slideshow"> 
+    <li><span>苟利</span></li> 
+    <li><span>国家</span></li> 
+    <li><span>生死以</span></li> 
+    <li><span>岂能</span></li> 
+    <li><span>祸福</span></li> 
+    <li><span>趋避之</span></li> 
+  </ul>
+</section>
+<script src="/js/script.js"></script>
+
+
+
+
+
+
+
+  </div>
+</body>
+</html>
