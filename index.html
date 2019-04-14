@@ -38,9 +38,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -65,6 +65,76 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-垃圾代码重构-《代码整洁之道》-读后感" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" class="article-date">
+  <time class="post-time" datetime="2019-04-14T12:38:19.000Z" itemprop="datePublished">
+    <span class="post-month">4月</span><br>
+    <span class="post-day">14</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/">垃圾代码重构-《代码整洁之道》-读后感</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/《代码整洁之道》读书笔记/">《代码整洁之道》读书笔记</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>根据作者的说法，该书大致上分为3个部分。第一部分主要介绍编写整洁代码的原则、模式和实践。第二部分结合实际的例子教导我们如何使用这些原则。第三部分则重点介绍得到的启示与灵感。目前的话我应该是读完了第一部分以及第二部分的一半左右，但是仅仅这部分的内容感觉就已经获益匪浅，在此记录一下。</p>
+<h2 id="有意义的命名"><a href="#有意义的命名" class="headerlink" title="有意义的命名"></a>有意义的命名</h2><p>这一点，在我不长的编程生涯中，体会不可谓不深。截取一段自己在大学阶段项目里的代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">public class LoginServiceImpl implements LoginService&#123;</span><br><span class="line"></span><br><span class="line">	@Autowired</span><br><span class="line">	private UserMapper userDao;</span><br><span class="line">	</span><br><span class="line">	@Autowired</span><br><span class="line">	private UserInfoMapper userInfoDao;</span><br><span class="line">	</span><br><span class="line">	public UserDto login(String username, String password) &#123;</span><br><span class="line">		// TODO Auto-generated method stub</span><br><span class="line">		UserDto userDto=new UserDto();</span><br><span class="line">		User user=userDao.LoginService(username, password);</span><br><span class="line">		UserInfo userInfo=null;</span><br><span class="line">		if(user!=null)&#123;</span><br><span class="line">			userInfo=userInfoDao.selectByUserName(user.getUserName());</span><br><span class="line">			userDto.setUserName(user.getUserName());</span><br><span class="line">			userDto.setRole(user.getRole());</span><br><span class="line">			userDto.setDepartment(userInfo.getDepartment());</span><br><span class="line">			userDto.setEmail(userInfo.getEmail());</span><br><span class="line">			userDto.setName(userInfo.getName());</span><br><span class="line">			userDto.setCreateTime(userInfo.getCreateTime());</span><br><span class="line">			userDto.setUserId(userInfo.getUserId());</span><br><span class="line">			return userDto;</span><br><span class="line">		&#125;else&#123;</span><br><span class="line">			return null;</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这是自己当年上学时某个项目中的一个实现用户登录的逻辑，以现在的眼光或者说现在的经验来看，感觉命名糟糕的一踏糊涂。首先是类的命名，类的命名应该是一个名词，因为一个对象其方法才是具体的行为，在这里我用login作为命名一眼看过去就好像这整个类都在做登录这个动作，但实际上类代表的不是一个动作，这很不面向对象。其次是对象UserDto和userDao也意义不明，一眼看去根本不知道这个类到底是用来干嘛的。所以正如书中说的那样<strong>变量、函数或类的名称应该已经答复了所有的大问题。它应该告诉你，它为什么会存在，它做什么事情，应该怎么用</strong>。<br>还有一点避免使用编码，没有理由要求每位新人都在弄清楚要应付的代码之外，还要再搞懂另一种编码“语言”。感觉自己刚刚进公司就常常犯这种错误，比如xxxList，xxxSet之类的带有鲜明语言特色的东西，其实对阅读代码的人毫无帮助反而徒增了很多负担。在看看下面的一个排序代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">int main(void)&#123;</span><br><span class="line">    int array[5] =&#123;4,2,1,4,5&#125;;</span><br><span class="line">    selectSort(array,5);</span><br><span class="line">    for(int i=0;i&lt;5;j++)&#123;</span><br><span class="line">        printf(&quot;%d&quot;,array[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>初学编程我们每个人应该都写过这样的排序代码，那在命名层面其有什么不妥呢？首先在代码开头定义的array变量就很意义不明，数组这一单词带有明显的编码色彩。其次是selectSort的函数命名，看起来是要排序，但是select是什么鬼，取出排序？对于函数命名应该言简意赅，意义明确，使用动词表达清其要做的事情，所以这里单纯用sort其实更好。最后是for循环的终止条件5，5这个数字在这段代码中表示什么？它在循环中表示什么的终止？显然这些问题仅仅靠单纯一个数字是没办法回答的。虽然这个程序现在很短小我们结合上下文阅读立马就可以反应过来，这个5是需要排序数组的大小，是待排数据的极值。但是如果程序变得很长很长呢，想象一下，你已经读了100来行代码了，现在又要求你回过头去结合上下文理解这个5的含义，任谁都会吐槽诅咒写的人吧。所以在编码中我们需要将这类意义不明的数字“5”换作一个具有意义的变量来表示其作用职责。<br>对于命名书中还涉及到了很多原则，在此就不做过多展开了，有兴趣可以去翻翻原作。由此看以看出，就单纯一项命名已经很考验编程功底了，所以千万不要胡乱命名给自己他人造成麻烦。</p>
+<h2 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h2><p><strong>短小，只做好一件事情。</strong>这是我对书中关于函数部分的最大印象。</p>
+<ul>
+<li>短小<br>即函数尽量要短，其实这个准则应该最大的好处就是读起来很很简单吧。按照作者的话说就是，每个函数都依序把你带到下一个函数。这就是函数应该达到的短小程度！！！即当我们面对一个长长的函数时，应该对其进行拆分将里面过长的内容拆分成一个个的小函数。这样不仅仅读的人赏心悦目，修改起来也很方便。</li>
+<li>只做好一件事<br>个人感觉这条是最难以把握的，因为往往分不清这件事是不是应该这个函数做还是需要单独拆分。比如getStudentInfoById这个函数，根据名称来看应该是通过id获取学生信息，听起来貌似只需要从数据库中拿出学生信息并返回就可以了，但是学生信息还需要各种处理，比如需要有顺序的返回，或者说某些信息需要转换后返回，这些操作看起来与拿这个动作无关，但是确实是属于这个函数的附属品，不可能在函数名称中体现到这么多操作。其实，只要确保函数中的内容都在同一抽象级就好了，刚才说的各种对信息的处理其实可以拆分成使用formatXXX之类的函数完成，那么我们这个getStudentInfoById的函数就一共分为了两步，第一步从数据库拿出学生信息，第二部对其进行格式化。格式化与从数据库拿出这两个操作均在函数的同一抽象层，所以这两个操作都可以看作是为了完成拿出学生准确信息这一操作。</li>
+</ul>
+<p><strong>判断函数是否不止做了一件事，就是看是否能再拆岀一个函数，该函数不仅只是单纯地重新诠释其实现</strong>。</p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>这里我就记住一句话，<strong>唯一真正好的注释是你想办法不去写的注释</strong><br>尽量用代码去解释函数、类的行为，带有少量注释的整洁而有表达力的代码，要比大量注释的零碎而复杂的代码像样的多。</p>
+<h2 id="格式"><a href="#格式" class="headerlink" title="格式"></a>格式</h2><p>代码格式很重要，感觉作者再书中不断强调这一点。尤其是一个项目团队大家都应当按照相同的格式去编写代码，这样有利于维护代码。从上往下的垂直格式总是必要的，还有最外层的文件的抽象概念由外到里依次变得细节。<br>运算符之间加空格区分：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">a = b + 2</span><br></pre></td></tr></table></figure></p>
+<p>不同的区块也应该分割下，函数开头一般都是变量声明初始化之类的，所以就应该在初始化变量完成后，多一个换行之类的与接下来的代码区分，以此利于阅读。总之不管用什么风格，同一个团队应该保持一致，这样在后续开发中项目整体才比较容易维护，不同人不同的风格就会造成巨大的混乱，最终导致源代码不可读，不可维护。</p>
+<h2 id="对象和数据结构"><a href="#对象和数据结构" class="headerlink" title="对象和数据结构"></a>对象和数据结构</h2><p><strong>当功能点需要常常添加新的结构时使用面向对象，需要常常添加新的方法行为使用面向过程</strong><br>所以说无论是面向对象或者是面向过程都是方法论，业务才是一切，没有永远适合的，只有当前适合的。<br><strong>一切都是对象只是一个传说</strong></p>
+<h2 id="错误处理"><a href="#错误处理" class="headerlink" title="错误处理"></a>错误处理</h2><p>这个仁者见仁智者见智，我只想说书中关于只使用异常的做法以前我可能会很认同，但最近在使用了go语言之后，对于没有异常处理机制的语言来说只使用异常就不再可能了，所以说看待问题还是不能太死板，没有什么是一成不变的，也没有绝对的真理。</p>
+<h2 id="类"><a href="#类" class="headerlink" title="类"></a>类</h2><p>类应该短小，且遵循单一权责原则，即类或者模块应有且只有一条加以修改的理由。<br>类应该只有少量实体变量，类中的每个方法都应该操作一个或多个这种变量，即类要保持内聚性。<br>如果说有很多方法并没有黏聚到类上，又或者为了保持函数和参数列表短小的策略，有时会导致为一组子集方法所用的实体变量数量增加。出现这种情况，就要拆分岀新的类了。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjugxcx1m001qnb2xxt7cz56z" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-go版本shadowsocks源码-终章" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -127,7 +197,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjty4sytf0006gl2x9p2d99le" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjugxcx0p0008nb2xx7opqgrz" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/shadowsocks源码/">shadowsocks源码</a></li></ul>
@@ -265,7 +335,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-(二)/" data-id="cjty4sytd0004gl2xia2s3nho" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-(二)/" data-id="cjugxcx0n0006nb2xjnhij9ym" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -372,7 +442,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjty4syte0005gl2xdgvs7sdy" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjugxcx0o0007nb2xs0cc4hgp" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/shadowsocks源码/">shadowsocks源码</a></li></ul>
@@ -410,7 +480,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
   </div>
 
           
@@ -437,7 +507,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjty4sytg000agl2x5ocmg0fa" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjugxcx0q000cnb2xz6qrqi32" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go语言/">go语言</a></li></ul>
@@ -518,7 +588,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjty4syt60000gl2xd8b9sdfh" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjugxcx0j0003nb2xt2ykhwnv" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/shadowsocks源码/">shadowsocks源码</a></li></ul>
@@ -556,7 +626,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
   </div>
 
           
@@ -628,7 +698,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjty4syth000cgl2x12bi2x15" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjugxcx0r000dnb2x8u8w1pzt" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go接口/">go接口</a></li></ul>
@@ -666,7 +736,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
   </div>
 
           
@@ -691,7 +761,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjty4sytk000hgl2xb7eix1yv" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjugxcx0u000hnb2xebjdihn4" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go数据类型/">go数据类型</a></li></ul>
@@ -729,7 +799,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
   </div>
 
           
@@ -755,7 +825,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjty4sytp000rgl2xt1m9wf1e" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjugxcx0z000pnb2x7x38571a" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go映射/">go映射</a></li></ul>
@@ -793,7 +863,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
   </div>
 
           
@@ -823,67 +893,10 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjty4sytn000ogl2x7tkxgmsu" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjugxcx0y000nnb2x629spn2r" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go切片/">go切片</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go语言读书笔记-action系列（一个简单的go程序）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" class="article-date">
-  <time class="post-time" datetime="2019-02-26T13:15:03.703Z" itemprop="datePublished">
-    <span class="post-month">2月</span><br>
-    <span class="post-day">26</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/">go语言读书笔记-action系列（一个简单的go程序）</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>action系列的书感觉还是挺经典的，入手后直接跳过第一章介绍，从第二章开始。在第二章中，其主要以一个搜索的小demo来整体回顾了下go的基础语法，以及鲜明特性，通道，携程之类的，顺读下来感觉对于之前读圣经积累下来的基础是一个十分不错的回顾。</p>
-<h2 id="快速开始一个go程序"><a href="#快速开始一个go程序" class="headerlink" title="快速开始一个go程序"></a>快速开始一个go程序</h2><p>书中的demo是一个从不同数据源中进行搜索的程序，其实现了json与rss这两种格式的读取与搜索，程序的整体架构如下：<br><img src="http://static.zybuluo.com/yiranblade/cyys3bjkuc07sxy558jlc0ch/image_1d4ku4v57nbldgti1b6eb1aok9.png" alt="image_1d4ku4v57nbldgti1b6eb1aok9.png-144.6kB"><br>程序的目录结构分为data，matchers,search三个部分，main一贯作为程序的主入口执行整个程序。<br>从中get到的新的点，感觉就是对于init的使用，预先在各个包中初始化matcher的类型，感觉就像传统面向对象的初始化工厂对象一样。以及对于接口的绑定感觉很有意思，像php，java等对于接口都要使用关键字implements强实现，而go不同，任何一个struct只要绑定了对应方法那么就可以视为其实现了该对象就可以对其赋值，这种弱关联性，对于习惯了php，java那种写法的方式一开始kennel会感觉很不适应但是习惯了，真的感觉很nice，程序写起来就有种用最少的组件做最多的事情的感觉，唯一不爽的就还是觉得代码可读性，没java那么的高，也可能是我习惯了java。</p>
-<h2 id="接口的赋值"><a href="#接口的赋值" class="headerlink" title="接口的赋值"></a>接口的赋值</h2><p>对于一个绑定方法结构体，如果其传入是值的话，则其接口引用类型无论是值还是指针都可以直接调用方法。如果传入的是指针的话，就只可以在接口引用类型是指针的情况下进行方法调用。举例如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 方法声明为使用指向 defaultMatcher 类型值的指针作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = dm // 将值赋值给接口类型 matcher.Search(feed, "test") // 使用值来调用接口方法</span><br><span class="line">&gt; <span class="keyword">go</span> build</span><br><span class="line">cannot use dm (<span class="keyword">type</span> defaultMatcher) as <span class="keyword">type</span> Matcher in assignment</span><br><span class="line"><span class="comment">// 方法声明为使用 defaultMatcher 类型的值作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = &amp;dm // 将指针赋值给接口类型 matcher.Search(feed, "test") // 使用指针来调用接口方法</span><br></pre></td></tr></table></figure></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjty4sytl000kgl2xzf4o7eh9" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go简单语法/">go简单语法</a></li></ul>
 
     </footer>
   </div>
@@ -938,9 +951,9 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
 
 

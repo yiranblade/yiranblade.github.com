@@ -38,9 +38,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -65,6 +65,63 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-go语言读书笔记-action系列（一个简单的go程序）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" class="article-date">
+  <time class="post-time" datetime="2019-02-26T13:15:03.703Z" itemprop="datePublished">
+    <span class="post-month">2月</span><br>
+    <span class="post-day">26</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/">go语言读书笔记-action系列（一个简单的go程序）</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>action系列的书感觉还是挺经典的，入手后直接跳过第一章介绍，从第二章开始。在第二章中，其主要以一个搜索的小demo来整体回顾了下go的基础语法，以及鲜明特性，通道，携程之类的，顺读下来感觉对于之前读圣经积累下来的基础是一个十分不错的回顾。</p>
+<h2 id="快速开始一个go程序"><a href="#快速开始一个go程序" class="headerlink" title="快速开始一个go程序"></a>快速开始一个go程序</h2><p>书中的demo是一个从不同数据源中进行搜索的程序，其实现了json与rss这两种格式的读取与搜索，程序的整体架构如下：<br><img src="http://static.zybuluo.com/yiranblade/cyys3bjkuc07sxy558jlc0ch/image_1d4ku4v57nbldgti1b6eb1aok9.png" alt="image_1d4ku4v57nbldgti1b6eb1aok9.png-144.6kB"><br>程序的目录结构分为data，matchers,search三个部分，main一贯作为程序的主入口执行整个程序。<br>从中get到的新的点，感觉就是对于init的使用，预先在各个包中初始化matcher的类型，感觉就像传统面向对象的初始化工厂对象一样。以及对于接口的绑定感觉很有意思，像php，java等对于接口都要使用关键字implements强实现，而go不同，任何一个struct只要绑定了对应方法那么就可以视为其实现了该对象就可以对其赋值，这种弱关联性，对于习惯了php，java那种写法的方式一开始kennel会感觉很不适应但是习惯了，真的感觉很nice，程序写起来就有种用最少的组件做最多的事情的感觉，唯一不爽的就还是觉得代码可读性，没java那么的高，也可能是我习惯了java。</p>
+<h2 id="接口的赋值"><a href="#接口的赋值" class="headerlink" title="接口的赋值"></a>接口的赋值</h2><p>对于一个绑定方法结构体，如果其传入是值的话，则其接口引用类型无论是值还是指针都可以直接调用方法。如果传入的是指针的话，就只可以在接口引用类型是指针的情况下进行方法调用。举例如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 方法声明为使用指向 defaultMatcher 类型值的指针作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = dm // 将值赋值给接口类型 matcher.Search(feed, "test") // 使用值来调用接口方法</span><br><span class="line">&gt; <span class="keyword">go</span> build</span><br><span class="line">cannot use dm (<span class="keyword">type</span> defaultMatcher) as <span class="keyword">type</span> Matcher in assignment</span><br><span class="line"><span class="comment">// 方法声明为使用 defaultMatcher 类型的值作为接收者</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m defaultMatcher)</span> <span class="title">Search</span><span class="params">(feed *Feed, searchTerm <span class="keyword">string</span>)</span></span></span><br><span class="line"><span class="function">// 通过 <span class="title">interface</span> 类型的值来调用方法</span></span><br><span class="line"><span class="function"><span class="title">var</span> <span class="title">dm</span> <span class="title">defaultMatcher</span></span></span><br><span class="line">var matcher Matcher = &amp;dm // 将指针赋值给接口类型 matcher.Search(feed, "test") // 使用指针来调用接口方法</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjugxcx0x000jnb2xo4fg77hv" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go简单语法/">go简单语法</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-TCP连接详解" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -110,7 +167,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjty4syta0001gl2xsporri3r" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjugxcx0g0001nb2xi3pb5fon" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/tcp/">tcp</a></li></ul>
@@ -148,7 +205,7 @@
         <div>
           
   <div class="article-category">
-    <a class="article-category-link" href="/categories/go语言读书笔记/">go语言读书笔记</a>
+    <a class="article-category-link" href="/categories/读书笔记/">读书笔记</a>
   </div>
 
           
@@ -206,7 +263,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjty4sytr000vgl2x9d471t4b" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjugxcx11000tnb2xeqw5elmh" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go反射/">go反射</a></li></ul>
@@ -264,9 +321,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>12</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>3</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>9</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
 
 
