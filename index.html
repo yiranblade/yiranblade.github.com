@@ -110,7 +110,37 @@
 </ul>
 <p>但是在redis内部，字符串的追加长度和长度计算很常见，而APPEND和STRLEN更是这两种操作，在Redis命令中的直接映射，这两个简单的操作不应该成为性能的瓶颈。而且，Redis除了处理C字符串之外，还需要处理单纯的字节数组，以及服务器协议等，所以为了方便与安全，Redis的字符串表示应该是二进制安全的：程序不应该对字符串里面保存的数据做任何假设，即数据可以是以\0结尾的C字符串，也可以是单纯的字节数组，或者其他格式的数据。<br>基于此，Redis使用sds类型替换了C语言的默认字符串表示：sds既可以高效地追加和长度计算，同时也是二进制安全的。</p>
 <h2 id="sds实现"><a href="#sds实现" class="headerlink" title="sds实现"></a>sds实现</h2><p>sds实现主要由两部分构成，第一部分是单纯的c中的char*:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">char</span> *sds;</span><br></pre></td></tr></table></figure></p>
-<p>第二部分则为其涉及的具体sds数据类型，一共有5种：<br>|结构体类型|作用|<br>:-:|:-:<br>|sdshdr5|保存5位长度字符串（不再使用）|<br>|sdshdr8|保存8位长度字符串|<br>|sdshdr16|保存16位长度字符串|<br>|sdshdr32|保存32位长度字符串|<br>|sdshdr64|保存64位长度字符串|</p>
+<p>第二部分则为其涉及的具体sds数据类型，一共有5种：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">结构体类型</th>
+<th style="text-align:center">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">sdshdr5</td>
+<td style="text-align:center">保存5位长度字符串（不再使用）</td>
+</tr>
+<tr>
+<td style="text-align:center">sdshdr8</td>
+<td style="text-align:center">保存8位长度字符串</td>
+</tr>
+<tr>
+<td style="text-align:center">sdshdr16</td>
+<td style="text-align:center">保存16位长度字符串</td>
+</tr>
+<tr>
+<td style="text-align:center">sdshdr32</td>
+<td style="text-align:center">保存32位长度字符串</td>
+</tr>
+<tr>
+<td style="text-align:center">sdshdr64</td>
+<td style="text-align:center">保存64位长度字符串</td>
+</tr>
+</tbody>
+</table>
 <p>在这些结构中整体都可以提取为以下几个字段：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span>&#123;</span></span><br><span class="line">    len ; </span><br><span class="line">    alloc ;</span><br><span class="line">    buf[] ;</span><br><span class="line">    flags ;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>这三个字段所表示的含义为：len代表buf的字符串长度，alloc代表整体的分配空间，buf为实际保存字符串数据的地方，flags保存了字符串的具体数据类型。<br>整体来看，我们就可以这样去理解整个sds的结构，类型sds是char*的别名，而结构sdshdr则保存了len、alloc、buf、flags四个属性。<br>使用这个结构来保存helloworld：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">struct sdshdr&#123;</span><br><span class="line">    len = 11;</span><br><span class="line">    alloc = 11;</span><br><span class="line">    buf = &#123;&apos;h&apos;,&apos;e&apos;,&apos;l&apos;,&apos;l&apos;,&apos;o&apos;,&apos;w&apos;,&apos;o&apos;,&apos;r&apos;,&apos;l&apos;,&apos;d&apos;,&apos;\0&apos;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>由此我们就可以理解，redis是怎么优化读取len的速度了。直接读取sdslen属性就可以实现时间复杂度为θ(1) 的长度计算操作。另一点，通过对buf分配一些额外的空间，sdshdr 可以让执行追加操作所需的内存重分配次数大大减少。</p>
@@ -131,7 +161,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjupcxuve000lb32xwssbtzwb" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjupd1fgb000tef2x3mz6alcj" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -201,7 +231,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjupcxuw0001kb32x85b0u112" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjupd1fgv001pef2xtze58zk5" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -276,7 +306,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjupcxuv10007b32xp9amxw8g" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjupd1fg00007ef2xjuruwqry" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -383,7 +413,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjupcxuuw0002b32xoxrsh5b5" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjupd1ffu0006ef2xyxla4n9d" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -448,7 +478,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjupcxuv9000cb32xn2h9lzdo" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjupd1fg10008ef2xfqmtf7qb" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
@@ -529,7 +559,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjupcxuur0000b32xvfgtbn9f" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjupd1ffr0003ef2x13kihw7e" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -639,7 +669,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjupcxuv20008b32x5f5h4jri" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjupd1fg3000cef2xzwzj4alq" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go接口/">go接口</a></li></ul>
@@ -702,7 +732,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjupcxuvh000rb32xv9ex1bk2" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjupd1fg4000def2x31g64vxf" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go数据类型/">go数据类型</a></li></ul>
@@ -766,7 +796,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjupcxuvg000pb32xkyewz6rr" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjupd1fg9000nef2xkwbzs0hx" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go映射/">go映射</a></li></ul>
@@ -834,7 +864,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjupcxuvc000jb32xretg5iqq" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjupd1fg7000jef2xidcpcm06" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go切片/">go切片</a></li></ul>
