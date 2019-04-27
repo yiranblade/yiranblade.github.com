@@ -38,7 +38,7 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
       <a href="/categories"><div><strong>5</strong><br>分类</div></a>
       <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
@@ -65,6 +65,74 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-go语言读书笔记-action系列（切片）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/03/01/go语言读书笔记-action系列（切片）/" class="article-date">
+  <time class="post-time" datetime="2019-03-01T02:48:28.249Z" itemprop="datePublished">
+    <span class="post-month">3月</span><br>
+    <span class="post-day">01</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/03/01/go语言读书笔记-action系列（切片）/">go语言读书笔记-action系列（切片）</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>go语言中的切片，感觉就像动态数组一样，自由的增删元素，更改大小。相比数组的固定大小，在编程中提供了不小的方便。不同于java中数据集合的各种抽象（map，set，list），以及三大基础结构底下的各个容器，go的集合表示很简单，就只有数组、切片、映射（当然比起php一切皆array逊色很多，但是我go快啊），感觉go应该是总结了各个语言的特性，总结除了这三种最具有普适性的结构，从而可以适应各种需要。</p>
+<h2 id="切片的内部实现"><a href="#切片的内部实现" class="headerlink" title="切片的内部实现"></a>切片的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/syopmcwvx1qov3ib7ybvglpa/image_1d4rgl7v3tf2110v19hd80t1q1dp.png" alt="image_1d4rgl7v3tf2110v19hd80t1q1dp.png-66.2kB"><br>在go中，切片可以看作对底层数组所做的抽象，切片的数据包含三个字段：</p>
+<ul>
+<li>指向数组的指针</li>
+<li>切片访问元素的个数</li>
+<li>允许增长到的元素个数（就是切片的容量，占用的内存空间）</li>
+</ul>
+<p>通过这种结构，明显可以发现在使用切片时需要十分小心，因为其共享底层数组，可能一不小心就会干扰到其它切片的元素。<br>但是这种结构也使得切片在函数间传递时不用像数组那样传递过大的数据量，无论多大的切片都只有24个字节（指针8个，元素个数8个，容量8个），极大的提升了效率。</p>
+<h2 id="append"><a href="#append" class="headerlink" title="append"></a>append</h2><p>使用append可以向切片中增加元素:</p>
+<h4 id="func-append-slice-Type-elems-…Type-Type"><a href="#func-append-slice-Type-elems-…Type-Type" class="headerlink" title="func append(slice []Type, elems …Type) []Type"></a>func append(slice []Type, elems …Type) []Type</h4><p>append 在切片容量足够时，直接将元素插入底层数组并更新切片访问元素的个数。切片的容量在不足够时append会自动生成新的切片增加容量，每次增加的容量是原来的两倍。但是当元素个数超过1000时，append容量的增长因子会被设为1.25。</p>
+<h2 id="创建切片的三个索引"><a href="#创建切片的三个索引" class="headerlink" title="创建切片的三个索引"></a>创建切片的三个索引</h2><p>在创建切片时，原来还可以使用第三个索引，第三个索引是用来控制切片的容量。</p>
+<ul>
+<li>为什么需要限制切片的容量？</li>
+</ul>
+<h4 id="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"><a href="#因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。" class="headerlink" title="因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。"></a>因为切片存在多个切片共用一个数组的情况，有时可能会由于误操作影响到其他切片，所以设置了容量的情况下，在添加元素时就可以强制使得append为了增加容量申请新的底层数组，从而保证即使误操作也不会影响到其它切片。</h4>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（切片）/" data-id="cjuz1npt9000rsx2xjeo8i194" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go切片/">go切片</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-go语言读书笔记-action系列（一个简单的go程序）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -109,7 +177,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjupd4hgw000hhc2xyfpf0wd8" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/26/go语言读书笔记-action系列（一个简单的go程序）/" data-id="cjuz1npt2000isx2x1dq5zsay" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go简单语法/">go简单语法</a></li></ul>
@@ -167,7 +235,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjupd4hg90000hc2xhna83os0" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/24/TCP连接详解/" data-id="cjuz1npsl0003sx2xmhawehrt" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/tcp/">tcp</a></li></ul>
@@ -263,7 +331,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjupd4hgz000nhc2xc78s7z12" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/02/21/go语言读书笔记之反射/" data-id="cjuz1nptc000ysx2xf9l6l0er" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go反射/">go反射</a></li></ul>
@@ -321,7 +389,7 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>13</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
       <a href="/categories"><div><strong>5</strong><br>分类</div></a>
       <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>

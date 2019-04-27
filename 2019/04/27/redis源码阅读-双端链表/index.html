@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>redis源码阅读--双端链表 | yiranblade&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="em….链表是一种常用的数据结构。双端链表也是比较熟悉的了，redis的实现还是有必要研究一下的。 redis中双端链表的应用redis的列表类型双端lian链表是redis列表类型的底层实现之一，当对列表类型的键进行操作–例如rpush、lpop或者llen等命令，程序在底层操作的可能就是双端链表。1234//这里之所以使用“可能”，是因为redis的列表其实使用两种数据结构作为底层实现：//1">
+<meta name="keywords" content="源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis源码阅读--双端链表">
+<meta property="og:url" content="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/index.html">
+<meta property="og:site_name" content="yiranblade&#39;s blog">
+<meta property="og:description" content="em….链表是一种常用的数据结构。双端链表也是比较熟悉的了，redis的实现还是有必要研究一下的。 redis中双端链表的应用redis的列表类型双端lian链表是redis列表类型的底层实现之一，当对列表类型的键进行操作–例如rpush、lpop或者llen等命令，程序在底层操作的可能就是双端链表。1234//这里之所以使用“可能”，是因为redis的列表其实使用两种数据结构作为底层实现：//1">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-04-27T05:07:52.590Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis源码阅读--双端链表">
+<meta name="twitter:description" content="em….链表是一种常用的数据结构。双端链表也是比较熟悉的了，redis的实现还是有必要研究一下的。 redis中双端链表的应用redis的列表类型双端lian链表是redis列表类型的底层实现之一，当对列表类型的键进行操作–例如rpush、lpop或者llen等命令，程序在底层操作的可能就是双端链表。1234//这里之所以使用“可能”，是因为redis的列表其实使用两种数据结构作为底层实现：//1">
+  
+    <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/plugin/bganimation/bg.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <div class="widget-wrap mobile-header">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
+    </div>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+        <section id="main"><article id="post-redis源码阅读-双端链表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/27/redis源码阅读-双端链表/" class="article-date">
+  <time class="post-time" datetime="2019-04-27T05:06:38.000Z" itemprop="datePublished">
+    <span class="post-month">4月</span><br>
+    <span class="post-day">27</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      redis源码阅读--双端链表
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis源码阅读/">redis源码阅读</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>em….链表是一种常用的数据结构。双端链表也是比较熟悉的了，redis的实现还是有必要研究一下的。</p>
+<h2 id="redis中双端链表的应用"><a href="#redis中双端链表的应用" class="headerlink" title="redis中双端链表的应用"></a>redis中双端链表的应用</h2><h3 id="redis的列表类型"><a href="#redis的列表类型" class="headerlink" title="redis的列表类型"></a>redis的列表类型</h3><p>双端lian链表是redis列表类型的底层实现之一，当对列表类型的键进行操作–例如rpush、lpop或者llen等命令，程序在底层操作的<strong>可能</strong>就是双端链表。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//这里之所以使用“可能”，是因为redis的列表其实使用两种数据结构作为底层实现：</span><br><span class="line">//1. 双端链表</span><br><span class="line">//2. 压缩列表</span><br><span class="line">//因为双端链表占用的内存比压缩列表要多，所以当创建新的列表键时，列表会优先考虑使用压缩列表作为底层实现，并且在有需要的时候，才会从压缩列表实现转换到双端列表的实现。</span><br></pre></td></tr></table></figure></p>
+<h3 id="redis自身功能"><a href="#redis自身功能" class="headerlink" title="redis自身功能"></a>redis自身功能</h3><p>除了实现列表类型，双端链表还被redis内部模块所应用：</p>
+<ul>
+<li>事务模块使用双端列表依序保存输入的命令</li>
+<li>服务器模块使用双端链表来保存多个客户端</li>
+<li>订阅/发送模块使用双端列表来保存订阅模式的多个客户端</li>
+<li>事件模块使用双端链表来保存时间事件</li>
+</ul>
+<h2 id="双端链表的实现"><a href="#双端链表的实现" class="headerlink" title="双端链表的实现"></a>双端链表的实现</h2><p>双端链表的实现由list和listNode这两个数据结构构成。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">typedef struct listNode &#123;</span><br><span class="line">    struct listNode *prev;</span><br><span class="line">    struct listNode *next;</span><br><span class="line">    void *value;</span><br><span class="line">&#125; listNode;</span><br><span class="line"></span><br><span class="line">typedef struct list &#123;</span><br><span class="line">    listNode *head; //表头指针</span><br><span class="line">    listNode *tail; //表尾指针</span><br><span class="line">    void *(*dup)(void *ptr); //复制函数</span><br><span class="line">    void (*free)(void *ptr); //释放函数</span><br><span class="line">    int (*match)(void *ptr, void *key);//比对函数</span><br><span class="line">    unsigned long len; //节点数量</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里的void表示双端列表对于节点保存的值的类型不做限制。<br>从数据结构的定义中可以看出：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">+ list的遍历可以双向进行</span><br><span class="line">+ list对链表头和表尾进行插入的复杂度都为0(1)---从而可以做到高效实现lpush，rpop，rpoplpush等命令</span><br><span class="line">+ list带有保存节点数量的len属性，所以计算链表长度的复杂度仅为0（1），和之前sds一样读取长度不会成为性能瓶颈。</span><br></pre></td></tr></table></figure></p>
+<p>操作双端链表的函数如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">list</span> *<span class="title">listCreate</span><span class="params">(<span class="keyword">void</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="built_in">list</span> *<span class="title">listAddNodeHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="keyword">void</span> *value)</span></span>;</span><br><span class="line"><span class="function"><span class="built_in">list</span> *<span class="title">listAddNodeTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="keyword">void</span> *value)</span></span>;</span><br><span class="line"><span class="function"><span class="built_in">list</span> *<span class="title">listInsertNode</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listNode *old_node, <span class="keyword">void</span> *value, <span class="keyword">int</span> after)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listDelNode</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listNode *node)</span></span>;</span><br><span class="line"><span class="function">listIter *<span class="title">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="keyword">int</span> direction)</span></span>;</span><br><span class="line"><span class="function">listNode *<span class="title">listNext</span><span class="params">(listIter *iter)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listReleaseIterator</span><span class="params">(listIter *iter)</span></span>;</span><br><span class="line"><span class="function"><span class="built_in">list</span> *<span class="title">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span></span>;</span><br><span class="line"><span class="function">listNode *<span class="title">listSearchKey</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="keyword">void</span> *key)</span></span>;</span><br><span class="line"><span class="function">listNode *<span class="title">listIndex</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="keyword">long</span> index)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listRotate</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listJoin</span><span class="params">(<span class="built_in">list</span> *l, <span class="built_in">list</span> *o)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<h2 id="迭代器"><a href="#迭代器" class="headerlink" title="迭代器"></a>迭代器</h2><p>redis还为双端链表实现了一个迭代器，这个迭代器可以从两个方向对双端列表进行迭代：</p>
+<ul>
+<li>沿着next指针前进，从表头到表尾</li>
+<li>沿着节点的prev指针前进，从表尾向表头</li>
+</ul>
+<p>定义如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="keyword">int</span> direction;</span><br><span class="line">&#125; listIter;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> AL_START_HEAD 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> AL_START_TAIL 1</span></span><br></pre></td></tr></table></figure></p>
+<p>其中，direction记录迭代从哪里开始，AL_START_HEA表示从表头开始，AL_START_TAIL 1表示从表尾开始。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>redis实现了自己的双端链表，其主要的作用用来作为redis列表类型的底层实现以及作为通用数据结构，被其他功能模块所使用。总体来说，这部分的代码不是很复杂，基本的实现都是当初学习c语言实现过的一些类似的东西，但是redis的设计者为其加上一点点额外的东西感觉就可以使得这些熟悉的东西变得灵活又作用强大，比如那个len字段的设计，看起来好像挺理所应当，但是在开始设计时，确实很难意识到这一点，往往看到别人的代码这样用才恍然大悟，所以学习的道路还很漫长。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjuz1npt7000psx2xvymm4zze" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/04/20/redis源码阅读-动态字符串/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">redis源码阅读--动态字符串</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <h1 class="blog-title">yiranblade&#39;s blog</h1>
+    <h2 class="blog-subtitle"></h2>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
+    </div>
+
+
+
+    <div class="social-link">
+      
+        <a class="hvr-bounce-in" href="http://github.com/yiranblade" target="_blank" title="Github">
+          Github
+        </a>
+      
+    </div>
+
+    <div class="friend-link">
+      <h2>友情链接</h2>
+      
+        <a class="hvr-bounce-in" href="http://blog.yiranblade.cn/" target="_blank" title="ShanaMaid">
+          ShanaMaid
+        </a>
+      
+    </div>
+  </div>
+</div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy;2018 - 2019 yiranblade&#39;s blog<br>
+      由<a href="http://hexo.io/" target="_blank">Hexo</a>强力驱动 | 
+      主题-<a href="https://github.com/ShanaMaid/hexo-theme-shana">Shana</a>
+      
+    </div>
+    
+  </div>
+</footer>
+
+    </div>
+    
+
+<script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//apps.bdimg.com/libs/wow/0.1.6/wow.min.js"></script>
+
+<script>
+new WOW().init();
+</script>   
+
+
+  <link rel="stylesheet" href="/plugin/fancybox/jquery.fancybox.css">
+  <script src="/plugin/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+  <link rel="stylesheet" href="/plugin/galmenu/GalMenu.css">
+  <script src="/plugin/galmenu/GalMenu.js"></script>
+  <div class="GalMenu GalDropDown">
+      <div class="circle" id="gal">
+        <div class="ring">
+          
+            <a href="/" title class="menuItem">首页</a>
+          
+            <a href="/tags" title class="menuItem">标签</a>
+          
+            <a href="/categories" title class="menuItem">分类</a>
+          
+            <a href="/archives" title class="menuItem">归档</a>
+          
+            <a href="/xxxxxxxxx" title class="menuItem">xxx</a>
+          
+            <a href="/xxxxxxx" title class="menuItem">xxxx</a>
+          
+        </div>
+        
+          <audio id="audio" src="#"></audio>
+        
+      </div> 
+</div>
+<div id="overlay" style="opacity: 1; cursor: pointer;"></div>
+  <script type="text/javascript">var items = document.querySelectorAll('.menuItem');
+    for (var i = 0,
+    l = items.length; i < l; i++) {
+      items[i].style.left = (50 - 35 * Math.cos( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%";
+      items[i].style.top = (50 + 35 * Math.sin( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%"
+    }</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('body').GalMenu({
+      'menu': 'GalDropDown'
+    })
+  });
+</script>
+
+  <section class="hidden-xs"> 
+  <ul class="cb-slideshow"> 
+    <li><span>苟利</span></li> 
+    <li><span>国家</span></li> 
+    <li><span>生死以</span></li> 
+    <li><span>岂能</span></li> 
+    <li><span>祸福</span></li> 
+    <li><span>趋避之</span></li> 
+  </ul>
+</section>
+<script src="/js/script.js"></script>
+
+
+
+
+
+
+
+  </div>
+</body>
+</html>
