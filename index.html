@@ -38,7 +38,7 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>15</strong><br>文章</div></a>
       <a href="/categories"><div><strong>5</strong><br>分类</div></a>
       <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
@@ -65,6 +65,148 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-redis源码阅读-字典" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/11/redis源码阅读-字典/" class="article-date">
+  <time class="post-time" datetime="2019-05-11T13:05:38.000Z" itemprop="datePublished">
+    <span class="post-month">5月</span><br>
+    <span class="post-day">11</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/11/redis源码阅读-字典/">redis源码阅读--字典</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis源码阅读/">redis源码阅读</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>字典又叫映射或者说关联数组，是一种抽象的数据结构。本节主要来分析下它的源码。关于map应该说都是挺熟悉的数据结构了。</p>
+<h2 id="redis中字典的应用"><a href="#redis中字典的应用" class="headerlink" title="redis中字典的应用"></a>redis中字典的应用</h2><p>redis字典的用途有以下两个：<br>1.实现数据库键空间；<br>2.用作hash类型键的底层实现之一；</p>
+<h2 id="字典的实现"><a href="#字典的实现" class="headerlink" title="字典的实现"></a>字典的实现</h2><p>实现字典的方法有很多种：</p>
+<ul>
+<li>使用链表和数组</li>
+<li>使用哈希表</li>
+<li>平衡树</li>
+</ul>
+<p>在redis种使用哈希表作为字典的底层实现。<br>其结构如下:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dict</span> &#123;</span></span><br><span class="line">    dictType *type;</span><br><span class="line">    <span class="keyword">void</span> *privdata;</span><br><span class="line">    <span class="comment">//哈希表</span></span><br><span class="line">    dictht ht[<span class="number">2</span>];</span><br><span class="line">    <span class="keyword">long</span> rehashidx; <span class="comment">/* rehashing not in progress if rehashidx == -1 */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> iterators; <span class="comment">/* number of iterators currently running */</span></span><br><span class="line">&#125; dict;</span><br></pre></td></tr></table></figure></p>
+<p><strong>0号哈希表是字典主要使用的哈希表，1号哈希表则只有在程序对0号哈希表rehash时使用。</strong></p>
+<h3 id="哈希表实现"><a href="#哈希表实现" class="headerlink" title="哈希表实现"></a>哈希表实现</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* This is our hash table structure. Every dictionary has two of this as we</span></span><br><span class="line"><span class="comment"> * implement incremental rehashing, for the old to the new table. */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictht</span> &#123;</span></span><br><span class="line">    <span class="comment">//哈希表节点指针数组</span></span><br><span class="line">    dictEntry **table;</span><br><span class="line">    <span class="comment">//指针数组大小</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> size;</span><br><span class="line">    <span class="comment">//指针数组长度的掩码</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> sizemask;</span><br><span class="line">    <span class="comment">//哈希表现有的节点数量</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> used;</span><br><span class="line">&#125; dictht;</span><br></pre></td></tr></table></figure>
+<p>table 属性是个数组， 数组的每个元素都是个指向 dictEntry 结构的指针。</p>
+<p>每个 dictEntry 都保存着一个键值对， 以及一个指向另一个 dictEntry 结构的指针：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> &#123;</span></span><br><span class="line">    <span class="keyword">void</span> *key;</span><br><span class="line">    <span class="keyword">union</span> &#123;</span><br><span class="line">        <span class="keyword">void</span> *val;</span><br><span class="line">        <span class="keyword">uint64_t</span> u64;</span><br><span class="line">        <span class="keyword">int64_t</span> s64;</span><br><span class="line">        <span class="keyword">double</span> d;</span><br><span class="line">    &#125; v;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> *<span class="title">next</span>;</span></span><br><span class="line">&#125; dictEntry;</span><br></pre></td></tr></table></figure></p>
+<p>next属性指向另一个dictEntry结构，多个dictEntry可以通过next指针串连成链表，所以dictht使用链地址法来处理键碰撞：当多个不同的键拥有相同的哈希值时，哈希表用一个链表将这些键连接起来。结构如下：<br><img src="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" alt="image.png-43kB"></p>
+<p>所以整个字典结构如下：<br><img src="http://static.zybuluo.com/yiranblade/nwy6hgtibqxjqlu82w6hjgrt/image.png" alt="image.png-69.6kB"></p>
+<h3 id="哈希算法"><a href="#哈希算法" class="headerlink" title="哈希算法"></a>哈希算法</h3><p>redis目前使用两种不同的哈希算法：</p>
+<ul>
+<li>MurmurHash2 32 bit 算法：这种算法的分布率和速度都非常好</li>
+<li>基于 djb 算法实现的一个大小写无关散列算法</li>
+</ul>
+<h3 id="dictCreate函数"><a href="#dictCreate函数" class="headerlink" title="dictCreate函数"></a>dictCreate函数</h3><p>dictCreate函数创建并返回一个新字典：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dict *d = dictCreate(&amp;hash_type, <span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure></p>
+<p><img src="http://static.zybuluo.com/yiranblade/0vd7w99sk5reddrvodwlraau/image.png" alt="image.png-37.4kB"><br>新创建的哈希表都没有为table属性分配任何空间:</p>
+<ul>
+<li>ht[0]-&gt;table 的空间分配将在第一次往字典添加键值对时进行；</li>
+<li>ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table 的空间分配将在rehash开始时进行;</li>
+</ul>
+<h3 id="添加键值对到字典"><a href="#添加键值对到字典" class="headerlink" title="添加键值对到字典"></a>添加键值对到字典</h3><p>根据字典所处的状态，将给定的键值对添加到字典会引起一系列复杂的操作:</p>
+<ul>
+<li>如果字典未初始化（即字典的0号哈希表的table属性为空），则程序需要对0号哈希表进行初始化；</li>
+<li>如果在插入时发生了键碰撞，则程序需要处理碰撞；</li>
+<li>如果插入新元素，使得字典满足了rehash条件，则需要启动rehash程序</li>
+</ul>
+<p>当程序处理完以上三种情况之后，新的键值对才会被真正地添加到字典上。<br>整个添加流程如下：<br><img src="http://static.zybuluo.com/yiranblade/r2py7a1mfcjqtwksm3z4phqa/image.png" alt="image.png-140.7kB"></p>
+<h4 id="添加新元素到空白字典"><a href="#添加新元素到空白字典" class="headerlink" title="添加新元素到空白字典"></a>添加新元素到空白字典</h4><p>当第一次往空字典里添加键值对时，程序会根据dict.h/DICT_HT_INITIAL_SIZE里指定的大小为d-&gt;ht[0]-&gt;table分配空间（目前这个值是4）</p>
+<ul>
+<li>字典空白<br><img src="http://static.zybuluo.com/yiranblade/m6rtl5ieut5u2jx8sgdg8g1y/image.png" alt="image.png-37.4kB"></li>
+<li>往字典添加了第一个键值对之后<br><img src="http://static.zybuluo.com/yiranblade/lqvjzrryxo6g3qq75m2tz0yk/image.png" alt="image.png-59.3kB"></li>
+</ul>
+<h4 id="添加新键值对时发生碰撞处理"><a href="#添加新键值对时发生碰撞处理" class="headerlink" title="添加新键值对时发生碰撞处理"></a>添加新键值对时发生碰撞处理</h4><p>在哈希表实现中，当两个不同的键拥有相同的哈希值时，称这两个键发生碰撞，而哈希表必须要对碰撞进行处理。字典哈希表所使用的碰撞解决方法被称之为链地址法：这种方法使用链表将多个哈希值相同的节点串连在一起，从而解决冲突问题。</p>
+<h4 id="添加新键值对时触发了rehash操作"><a href="#添加新键值对时触发了rehash操作" class="headerlink" title="添加新键值对时触发了rehash操作"></a>添加新键值对时触发了rehash操作</h4><p>对于使用链地址法来解决碰撞问题的哈希表dictht来说，哈希表的性能取决于大小（size属性）与保存节点数量（used属性）之间的比率：</p>
+<ul>
+<li>哈希表的大小与节点数量，比率在1:1时，哈希表的性能最好；</li>
+<li>如果节点数量比哈希表的大小要大很多的话，哈希表就会退化称多个链表，哈希表本身的性能优势便不复存在；</li>
+</ul>
+<p>所以为了在字典的键值对不断增多的情况下保持良好的性能，字典需要对所使用的哈希表（ht[0]）进行rehash操作:在不修改任何键值对的情况下，对哈希表进行扩容，将比率维持在1:1左右。<br>dictAdd在每次向字典添加新键值对之前，都会对哈希表ht[0]进行检查，对于ht[0]的size和used属性，如果它们之间的比率ratio=used/size满足以下任何一个条件的话，rehash过程就会被激活：</p>
+<ol>
+<li>自然 rehash ： ratio &gt;= 1 ，且变量 dict_can_resize 为真。</li>
+<li>强制 rehash ： ratio 大于变量 dict_force_resize_ratio（目前版本中， dict_force_resize_ratio的值为 5 ）。</li>
+</ol>
+<h4 id="Rehash执行过程"><a href="#Rehash执行过程" class="headerlink" title="Rehash执行过程"></a>Rehash执行过程</h4><p>字典的rehash操作实际上就是执行以下任务:</p>
+<ol>
+<li>创建一个比ht[0]-&gt;table更大的ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table；</li>
+<li>将ht[0]-&gt;table中的所有键值对迁移到ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table;</li>
+<li>将原有ht[0]的数据清空，并将ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>替换为新的ht[0]；</li>
+</ol>
+<p>经过以上步骤，程序就在不改变原有键值对数据的基础上，增大了哈希表的大小。</p>
+<h4 id="渐进式rehash"><a href="#渐进式rehash" class="headerlink" title="渐进式rehash"></a>渐进式rehash</h4><p>rehash程序并不是在激活之后，就马上执行直到完成的，而是多次、渐进式地完成。<br>redis完成渐进式rehash主要由_dictRehashStep和dictRehashMilliseconds两个函数进行：</p>
+<ul>
+<li>_dictRehashStep用于对数据库字典、以及哈希键的字典进行被动rehash；</li>
+<li>dictRehashMilliseconds则由Redis服务器常规任务程序执行，用于对数据库字典进行主动rehash；</li>
+</ul>
+<p><strong>_dictRehashStep</strong><br>每次执行_dictRehahshStep，ht[0]-&gt;table哈希表第一个不为空的索引上的所有节点就会全部迁移到ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table。<br><strong>dictRehashMilliseconds</strong><br>dictRehashMilliseconds可以在指定的毫秒数内，对字典进行rehash。<br>当Redis的服务器常规任务执行时，dictRehashMilliseconds就会被执行，在规定的时间内，尽可能对数据库字典中那些需要rehash的字典进行rehash，从而加速数据库字典的rehash进程。</p>
+<p><strong>因为在rehash时，字典会同时使用两个哈希表，所以在这期间的所有查找、删除等操作，除了在ht[0]进行，还会在ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>进行。在执行添加操作时，新的节点会直接添加到ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>而不是ht[0]，这样保证ht[0]的节点数量在整个rehash过程中都只减不增。</strong></p>
+<h4 id="字典的收缩"><a href="#字典的收缩" class="headerlink" title="字典的收缩"></a>字典的收缩</h4><p>对hash表进行收缩的过程与增加几乎一样；</p>
+<ol>
+<li>创建一个比ht[0]-&gt;table小的ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table;</li>
+<li>将ht[0]-&gt;table中的所有键值对迁移到ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>-&gt;table；</li>
+<li>将原有ht[0]数据清空，并将ht<a href="http://static.zybuluo.com/yiranblade/egppkusmd2euuunulsin9scl/image.png" target="_blank" rel="noopener">1</a>替换为新的ht[0];</li>
+</ol>
+<h3 id="字典的迭代"><a href="#字典的迭代" class="headerlink" title="字典的迭代"></a>字典的迭代</h3><p>字典拥有其自己的迭代器实现—对字典进行迭代实际上就是对字典所使用的哈希表进行迭代：</p>
+<ul>
+<li>迭代器首先迭代字典的第一个哈希表，然后，如果rehash正在进行的话，就继续对第二个哈希表进行迭代。</li>
+<li>当迭代哈希表时，找到第一个不为空的索引，然后迭代这个索引上的所有节点。</li>
+<li>当这个索引迭代完了，继续查找下一个不为空的索引，如此反覆，直到整个哈希表都迭代完为止。</li>
+</ul>
+<p>字典的迭代器有两种：</p>
+<ul>
+<li>安全迭代器：在迭代过程中，可以对字典进行修改。</li>
+<li>不安全迭代器：在迭代过程中，不可以对字典进行修改。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>字典是由键值对构成的抽象数据结构</li>
+<li>Redis中的数据库和哈希键都基于字典来实现</li>
+<li>Redis字典的底层实现为哈希表，每个字典使用两个哈希表，一般情况下只使用0号哈希表，只有在rehash进行时，才会使用0号和1号哈希表。</li>
+<li>哈希表使用链地址法来解决键冲突的问题。</li>
+<li>Rehash可以用于扩展或收缩哈希表。</li>
+<li>对哈希表的rehash是分多次、渐进式地进行的</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjvjiy6pd001qs32xan65fhwa" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-redis源码阅读-双端链表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -126,7 +268,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjuz1npt7000psx2xvymm4zze" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjvjiy6oy000us32xum289ujg" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -235,7 +377,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjuz1npt3000lsx2x4pheyjmy" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjvjiy6ow000os32x9dziv8lj" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -305,7 +447,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjuz1nptv001osx2xhcxs1bn4" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjvjiy6pe001ss32x8ywpzlcf" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -380,7 +522,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjuz1npsu0007sx2x8w35t7yp" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjvjiy6ol0007s32xd9d44nvv" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -487,7 +629,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjuz1npst0006sx2xt9g4q93e" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjvjiy6oj0005s32xa8y5ddp2" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -552,7 +694,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjuz1npsv0008sx2xiue32y0w" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjvjiy6ok0006s32x4yr712bl" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
@@ -633,7 +775,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjuz1npsg0001sx2xl7wwq14d" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjvjiy6of0002s32xwgrbal1c" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -743,7 +885,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjuz1npsx000csx2x39l113le" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjvjiy6oo000cs32x9oshky2a" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go接口/">go接口</a></li></ul>
@@ -806,74 +948,10 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjuz1npsy000esx2xj7a2y8ym" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjvjiy6oq000gs32xis2nuk1t" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go数据类型/">go数据类型</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go语言读书笔记-action系列（映射）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/03/01/go语言读书笔记-action系列（映射）/" class="article-date">
-  <time class="post-time" datetime="2019-03-01T06:43:32.361Z" itemprop="datePublished">
-    <span class="post-month">3月</span><br>
-    <span class="post-day">01</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/01/go语言读书笔记-action系列（映射）/">go语言读书笔记-action系列（映射）</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>对于习惯了map这种表述方式的我，现在看来还是go中使用映射这个词，表达这一结构感觉更加精准点。</p>
-<h2 id="映射内部实现方式"><a href="#映射内部实现方式" class="headerlink" title="映射内部实现方式"></a>映射内部实现方式</h2><p>映射的内部是无序的，因为其使用了散列表。<br><img src="http://static.zybuluo.com/yiranblade/f73al21v28v8ixnbx7b09813/image_1d4rk5af2rkt1taiego1ied6jv9.png" alt="image_1d4rk5af2rkt1taiego1ied6jv9.png-156.1kB"></p>
-<p>映射的散列结构包含一组桶，所有的操作都要先选择一个桶。把操作映射时指定的键传递给映射的散列函数就可以选中对应的桶。<br>go语言生成散列键的过程如下：</p>
-<ol>
-<li>这些字符串会转换为一个数值（散列值）。</li>
-<li>这个数值落在映射已有桶的序号范围内表示一个可以用于存储的桶的序号。</li>
-<li>最后这个数值被用来选择桶，用于存储或者查找指定的键值对。</li>
-</ol>
-<p>在此需要强调的是，散列值的低位用来选择桶，高位用来区分不同的项。<br>对于桶的内部实现，感觉action中解释的并不是很好，尤其这个散列值高位的作用，解释感觉很难理解。<br>桶的内部实现使用两个数据结构实现。第一个是数组，内部存储的是用于选择桶的散列键的高位值（在对key/value对增删查的时候，先比较key的hash值高八位是否相等，然后再比较具体的key值，主要用来帮助区分寻找对应的key，不用每次都对key做全等判断）。第二个数据结构是一个字节数组，用于存储键值对。该字节数组存储了这个桶里所有的键，之后依次存储了这个桶里所有的值。</p>
-<h2 id="映射的扩容"><a href="#映射的扩容" class="headerlink" title="映射的扩容"></a>映射的扩容</h2><p>action没有提到这一点，但是我觉得应该去探索下。<br>在桶中插入元素时，当桶填满后，将通过overflow指针来mallocgc一个新的bucket出来形成链表。<br>随着元素的增长，在桶链中寻找特定的key会变得效率低下，所以再插入的元素个数/桶达到阙值时（貌似设置为6.5），map会扩容，创建新的桶数组，长度为之前长度的两倍。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/01/go语言读书笔记-action系列（映射）/" data-id="cjuz1nptb000wsx2xrxwfhd3p" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go映射/">go映射</a></li></ul>
 
     </footer>
   </div>
@@ -928,7 +1006,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>14</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>15</strong><br>文章</div></a>
       <a href="/categories"><div><strong>5</strong><br>分类</div></a>
       <a href="/tags"><div><strong>10</strong><br>标签</div></a>
     </div>
