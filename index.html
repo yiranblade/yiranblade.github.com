@@ -38,9 +38,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>15</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>16</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -65,6 +65,78 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-理解跳跃表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/21/理解跳跃表/" class="article-date">
+  <time class="post-time" datetime="2019-05-21T09:15:06.000Z" itemprop="datePublished">
+    <span class="post-month">5月</span><br>
+    <span class="post-day">21</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/21/理解跳跃表/">理解跳跃表</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/数据结构与算法/">数据结构与算法</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>好久没碰过数据结构了，在看redis源码时看到跳跃表的结构，不禁又回想起大学毕业面试被问到跳表的一脸尴尬，于是这次就好好的将对跳表的理解整理下吧。</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>跳跃表是一种数据结构。其允许快速查询一个有序连续元素的数据链表。而且跳跃列表的平均查找和插入时间复杂度都是O(log n)，比常用的线性结构链表，数组这类的时间复杂度O(n)要优秀很多。<br>其结构如图所示：<br><img src="http://static.zybuluo.com/yiranblade/f091k5dmlz778f01tu9ov96i/image.png" alt="image.png-61kB"><br><strong>每个带有箭头的框表示一个指针, 而每行是一个稀疏子序列的链表；底部的编号框（黄色）表示有序的数据序列。查找从顶部最稀疏的子序列向下进行, 直至需要查找的元素在该层两个相邻的元素中间。</strong></p>
+<p>##增加元素<br>对于跳跃表来说，当向表中增加一个元素时其会通过最顶层的索引一层层往下找，由于建立索引的关键节点几乎是下一层的一半，所以在查找索引的过程需要比较的元素数目相比于直接去查找源链表一次会减少一半的查询次数，即总的时间复杂度会为O(log n)。<br>具体过程是这样的：</p>
+<div id="flowchart-0" class="flow-chart"></div>
+
+<p>##删除元素<br>跳跃表删除元素的操作是这样的，自上而下，查找第一次出现节点的索引，并逐层找到每一层对应的节点。删除每一层查找到的节点，如果该层只剩下1个节点，删除整个一层（原链表除外）。总体上，跳跃表删除操作的时间复杂度是O（logN）。<br>![image.png-79.1kB][2]</p>
+<p>5为需要删除的节点。</p>
+<p>##总结<br>跳表的结构定义：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">ype head <span class="keyword">struct</span> &#123;</span><br><span class="line">	length <span class="keyword">int</span></span><br><span class="line">	next   *skipNode</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> skipNode <span class="keyword">struct</span> &#123;</span><br><span class="line">	value <span class="keyword">int</span></span><br><span class="line">	next  *skipNode</span><br><span class="line">	high  *skipNode</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> skipTable <span class="keyword">struct</span> &#123;</span><br><span class="line">	table []*head</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>对于跳表其实可以使用一个指针数组保存每一级别的头节点，每个元素节点存在两个指针一个指向链表的下一个元素一个指向上级索引这种方式来实现。查找和修改的操作基本步骤和上面的删除添加差不多。我们日常熟悉的redis中也有对其使用，相比于平衡树其具有易于维护的特点。</p>
+<p>  [2]: <a href="http://static.zybuluo.com/yiranblade/rrgrlex0unc20o563pgdmhki/image.png" target="_blank" rel="noopener">http://static.zybuluo.com/yiranblade/rrgrlex0unc20o563pgdmhki/image.png</a><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
+input=>inputoutput: 待增加节点
+op1=>operation: 查找第一层索引
+op2=>operation: 查找到后继续下一层索引
+op3=>operation: 直到找到相应位置
+op4=>operation: 插入该节点，抛硬币决定该节点是否要提升一层索引
+ed=>end: 结束
+
+st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjvxl7tj8000y902xe44t1hcs" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/跳表/">跳表</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-redis源码阅读-字典" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -194,7 +266,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjvjiy6pd001qs32xan65fhwa" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjvxl7tjs001w902xf50y60vq" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -268,7 +340,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjvjiy6oy000us32xum289ujg" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjvxl7tj6000r902xpck2uwta" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -377,7 +449,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjvjiy6ow000os32x9dziv8lj" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjvxl7tj7000t902xwzzr0i13" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -447,7 +519,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjvjiy6pe001ss32x8ywpzlcf" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjvxl7tjt001y902xxfzlsewp" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -522,7 +594,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjvjiy6ol0007s32xd9d44nvv" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjvxl7tin0005902xmgh2dmyt" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -629,7 +701,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjvjiy6oj0005s32xa8y5ddp2" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjvxl7til0004902xlugvlf6a" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -694,7 +766,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjvjiy6ok0006s32x4yr712bl" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjvxl7tio0006902xi5twjmj2" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
@@ -775,7 +847,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjvjiy6of0002s32xwgrbal1c" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjvxl7tih0001902x4qcohpee" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -885,73 +957,10 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjvjiy6oo000cs32x9oshky2a" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjvxl7tiq000a902xsvsmozlg" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go接口/">go接口</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go语言读书笔记-action系列(类型)" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/03/11/go语言读书笔记-action系列(类型)/" class="article-date">
-  <time class="post-time" datetime="2019-03-11T03:06:54.751Z" itemprop="datePublished">
-    <span class="post-month">3月</span><br>
-    <span class="post-day">11</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/11/go语言读书笔记-action系列(类型)/">go语言读书笔记-action系列(类型)</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="用户定义的类型"><a href="#用户定义的类型" class="headerlink" title="用户定义的类型"></a>用户定义的类型</h2><p>实际上这里指的就是结构体，go语言中创建结构体的方式与c中基本大同小异，但是go会每次用上一个type 相当于给这个结构体一个命名，这一点不同于c中的用法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">//go语言写法</span><br><span class="line">type user strut &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string </span><br><span class="line">    ext int</span><br><span class="line">    privileged bool</span><br><span class="line">&#125;</span><br><span class="line">//c语言写法</span><br><span class="line">struct user &#123;</span><br><span class="line">    char *name;</span><br><span class="line">    char *email;</span><br><span class="line">    int ext;</span><br><span class="line">    bool privileged;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>当然c也可以用typedef这个关键字 给予别名使用。</p>
-<p>但是go中的type 定义的类型会被认定为一个新的类型，比如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">type blade int</span><br></pre></td></tr></table></figure></p>
-<p>这个blade会被认为是全新的类型，将int类型赋值给它时会报错，c语言中就仅仅只是个别名的意思，赋值依然可以。</p>
-<p>##内置类型<br>内置类型指的就是数值类型、字符串类型和布尔类型，也就是常说的int，string这类的。因为其是原始类型，所以对其进行增加或者删除都会创建新值，因为其底层结构不共享。<br>action中举了这样一个例子：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">func Trim(s string, cutset string) string&#123;</span><br><span class="line">    if s == &quot;&quot; || cutset == &quot;&quot;nc&#123;</span><br><span class="line">        return s</span><br><span class="line">    &#125;</span><br><span class="line">    return TrimFunc(s,makeCutsetFunc(cutset))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>这个函数对调用者原始的string值的一个副本进行操作，并且返回一个新的string值做副本。字符串就像整数、浮点数和布尔值一样，本质上是一种很原始的数据值，所以在函数或方法内外传递时，要传递字符串的一份副本。</p>
-<h2 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h2><p>go语言中的引用类型有：切片、映射、通道、接口、和函数类型。创建上述类型的变量是共享底层数据结构的。<br>�由于其底层共享结构，所以不需要通过指针来共享引用类型的值，而通过复制来传递引用。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func (ip IP) MarshalText() ([]byte,error)&#123;</span><br><span class="line">    if len(ip) == 0&#123;</span><br><span class="line">        return []byte(&quot;&quot;),nil</span><br><span class="line">    &#125;</span><br><span class="line">    if len(ip) != IPV4len &amp;&amp; len(ip) !=IPv6len&#123;</span><br><span class="line">        return nil,erroes.New(&quot;invalid IP address&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    return []byte(ip.String()),nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>以上代码，正如预期的那样通过复制来传递引用，从而不需要通过指针来共享引用类型的值。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>go语言中的类型大体上就分为这几类，在其作为方法的参数时，创建新的值就用值接收者，否则就用指针。这就是保持传递的一致性。内置类型与引用类型传递的时候，就需要把握其特性再根据传递原则决定如何使用，比如引用类型因为其底层共享结构，就不用传递指针，仅仅传递引用的副本就可以完成修改值的操作，而内置类型就需要指针。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(类型)/" data-id="cjvjiy6oq000gs32xis2nuk1t" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go数据类型/">go数据类型</a></li></ul>
 
     </footer>
   </div>
@@ -1006,9 +1015,9 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>15</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>5</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>10</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>16</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
 
 
