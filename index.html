@@ -38,7 +38,7 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>16</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>17</strong><br>文章</div></a>
       <a href="/categories"><div><strong>6</strong><br>分类</div></a>
       <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
@@ -65,6 +65,70 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-redis源码阅读-跳跃表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/06/02/redis源码阅读-跳跃表/" class="article-date">
+  <time class="post-time" datetime="2019-06-02T04:20:12.000Z" itemprop="datePublished">
+    <span class="post-month">6月</span><br>
+    <span class="post-day">02</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/06/02/redis源码阅读-跳跃表/">redis源码阅读--跳跃表</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis源码阅读/">redis源码阅读</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>对于跳跃表之前已经简单说明了下，那么redis的跳跃表又是如何实现应用的呢？这次就来看看。</p>
+<h2 id="redis跳跃表的实现"><a href="#redis跳跃表的实现" class="headerlink" title="redis跳跃表的实现"></a>redis跳跃表的实现</h2><p>数据结构定义：(server.h/zskiplist)<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="comment">//头节点，尾节点</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span></span><br><span class="line">    <span class="comment">//节点数量</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> length;</span><br><span class="line">    <span class="comment">//目前表内节点的最大层数</span></span><br><span class="line">    <span class="keyword">int</span> level;</span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure></p>
+<p>节点定义如下：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    sds ele;</span><br><span class="line">    <span class="comment">//分值</span></span><br><span class="line">    <span class="keyword">double</span> score;</span><br><span class="line">    <span class="comment">//后退指针，用于从表尾方向向表头方向迭代：当需要逆序处理有序集的命令时，就会用到这个属性</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line">    <span class="comment">//层</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">long</span> span;</span><br><span class="line">    &#125; level[];</span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure></p>
+<h2 id="redis跳跃表的应用"><a href="#redis跳跃表的应用" class="headerlink" title="redis跳跃表的应用"></a>redis跳跃表的应用</h2><p>跳跃表在redis中的唯一作用，就是实现有序集数据类型。跳跃表将指向有续集的score值和meber域的指针作为元素，并且以score值作为索引，对有序元素进行排序。<br>举例子来说：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">redis&gt; ZADD s <span class="number">6</span> x <span class="number">10</span> y <span class="number">15</span> z</span><br><span class="line">(integer) <span class="number">3</span></span><br><span class="line">redisZRANGE s <span class="number">0</span><span class="number">-1</span> WITHSCORES</span><br></pre></td></tr></table></figure></p>
+<p>在redis的底层实现中，其为x、yh和z三个member分别创建了三个字符串，值分别为double类型的6，10，和15，然后用跳跃表将这些指针有序地保存起来，形成这样一个跳跃表：<br><img src="http://static.zybuluo.com/yiranblade/dfg1p2u8qtk9ib99ywg02xu4/image.png" alt="image.png-35.8kB"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>redis的跳跃表是一种随机化的数据结构，查找、添加、删除操作都可以在对数期望时间下完成。</li>
+<li>跳跃表目前在redis的唯一作用，就是作为有序集类型的底层数据结构（另一个是字典）。</li>
+<li>为了满足自身需要，redis基于william pugh 论文中的描述的跳跃表进行了修改，包括:<br>  1.score值可重复。<br>  2.对比一个元素与同时需要检查它的score和member。<br>  3.每个节点带有高度为1层的后退指针，用于从表尾方向向表头方向迭代。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjwefujk6000wwt2xtud2zeha" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-理解跳跃表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -124,7 +188,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjvxl7tj8000y902xe44t1hcs" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjwefujk80012wt2xh20rfy4u" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/跳表/">跳表</a></li></ul>
@@ -266,7 +330,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjvxl7tjs001w902xf50y60vq" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjwefujku0022wt2x1y8xhzcq" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -340,7 +404,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjvxl7tj6000r902xpck2uwta" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjwefujk70010wt2xr2dlur2b" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -449,7 +513,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjvxl7tj7000t902xwzzr0i13" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjwefujk3000nwt2x3atq37t8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -519,7 +583,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjvxl7tjt001y902xxfzlsewp" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjwefujkt0021wt2xsdxsqo59" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -594,7 +658,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjvxl7tin0005902xmgh2dmyt" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjwefujjs0006wt2xm1wobewo" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -701,7 +765,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjvxl7til0004902xlugvlf6a" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjwefujjt0007wt2x5w9gn7wv" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -766,7 +830,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjvxl7tio0006902xi5twjmj2" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjwefujju0008wt2xvbq6phnm" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
@@ -847,120 +911,10 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjvxl7tih0001902x4qcohpee" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjwefujjo0002wt2xfmytr8iy" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go语言读书笔记-action系列(方法与接口）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/03/11/go语言读书笔记-action系列(方法与接口）/" class="article-date">
-  <time class="post-time" datetime="2019-03-11T08:07:20.000Z" itemprop="datePublished">
-    <span class="post-month">3月</span><br>
-    <span class="post-day">11</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/11/go语言读书笔记-action系列(方法与接口）/">go语言读书笔记-action系列(方法与接口)</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="方法简单概述"><a href="#方法简单概述" class="headerlink" title="方法简单概述"></a>方法简单概述</h2><p>go语言中，方法是用来给用户定义的类型添加新的行为。要想给类型添加方法，只需要在函数关键字func和函数名之间加一个参数，这个参数就被称为接收者，将函数与接收者的类型绑定在一起。函数有接收者就被称为方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">type user struct &#123;</span><br><span class="line">    name string</span><br><span class="line">    email string</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func (u user) notify() &#123;</span><br><span class="line">    fmt.Printf(&quot;hello world!&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>ok，其实关于这一篇读书笔记我重点想记录的是接口，关于方法大概声明就是这样，使用的套路和java、php等各种面向对象的语言都是差不多。</p>
-<hr>
-<h2 id="接口"><a href="#接口" class="headerlink" title="接口"></a>接口</h2><p>go语言中的接口，个人感觉和java，php中这类相比，与实现者之间的联系真的是十分薄弱，其不需要使用任何显式的关键字指明要实现该接口。只要类型绑定了同样的方法就认为其实现了该接口，就可以赋值给该接口类型。也就是说go中需要实现某个接口不需要显式的指明实现哪一个，想实现哪个接口直接编写该方法就可以，不想实现后就删除该方法。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">type notifier inteface &#123;</span><br><span class="line">    notify()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">type user struct&#123;</span><br><span class="line">    name string</span><br><span class="line">    email string</span><br><span class="line">&#125; </span><br><span class="line"></span><br><span class="line">func (u *user) notify()&#123;</span><br><span class="line">    fmt.Printf(&quot;Sending user email to %s&lt;%s&gt;\n&quot;,u.name,u.email)</span><br><span class="line">&#125;</span><br><span class="line">//这就可以说user类型实现了notifier 接口</span><br><span class="line">func main（)&#123;</span><br><span class="line">    var n notifier</span><br><span class="line">    n = user&#123;&quot;bill&quot;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<hr>
-<h2 id="接口的内部实现"><a href="#接口的内部实现" class="headerlink" title="接口的内部实现"></a>接口的内部实现</h2><p><img src="http://static.zybuluo.com/yiranblade/ids8bjg2xxb5yhbk7ecmoh4m/image_1d5llurtkgeq6kr1oln1gj0igdm.png" alt="image_1d5llurtkgeq6kr1oln1gj0igdm.png-126.9kB"></p>
-<p>上图展示了在user类型值赋值后接口变量的值的内部布局。接口值是一个两个字长度的数据结构，第一个字包含一个指向内部表的指针。这个内部表叫iTable，包含了所存储的值的类型信息。iTable包含了已存储的值的类型信息以及与这个值相关联的一组方法。第二个字是一个指向所存储值的指针。</p>
-<p><img src="http://static.zybuluo.com/yiranblade/1qecorn6y0a92pregavnwkoc/image_1d5lmui17tig1l7p1ec91bv31m4k2g.png" alt="image_1d5lmui17tig1l7p1ec91bv31m4k2g.png-128.5kB"></p>
-<p>当把指针赋值给接口之后，类型信息会存储一个指向保存类型的指针，而接口值第二个字依旧保存指向实体值的指针。</p>
-<hr>
-<h2 id="方法集"><a href="#方法集" class="headerlink" title="方法集"></a>方法集</h2><p>方法集定义了接口的接受规则。当使用指针接收者来实现接口时，值类型则无法实现该接口。这是因为值类型的方法集只包括值接收者声明的方法，所以值类型无法实现指针接收者声明的方法。、</p>
-<ul>
-<li>以下是go语言规范里描述的方法集：</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th style="text-align:center">Values</th>
-<th style="text-align:center">Methods</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:center">T</td>
-<td style="text-align:center">(t T)</td>
-</tr>
-<tr>
-<td style="text-align:center">*T</td>
-<td style="text-align:center">(t T) and (t *T)</td>
-</tr>
-</tbody>
-</table>
-<p><strong>T类型的值的方法集只包含值接收者声明的方法。而指向T类型的指针的方法集既包含值接收者声明的方法，也包含指针接收者声明的方法。</strong></p>
-<ul>
-<li>从接收者类型角度来看方法集</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Methods Receivers</th>
-<th>Values</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>T</td>
-<td>(t T)</td>
-</tr>
-<tr>
-<td>*T</td>
-<td>(t T) and (t *T)</td>
-</tr>
-</tbody>
-</table>
-<p>这个实际上和上面那个说的是同一件事，只不过换了个视角。如果使用指针接收者来实现一个接口，那么只有指向那个类型的指针才能够实现对应的接口。如果使用值接收者来实现一个接口，那么那个类型的值和指针都能够实现对应的接口。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这一篇主要记录了，go中方法的简单使用以及初步了解了下接口内部的存储方式。对于接口其实我当初在看go圣经时就一直很疑惑，为什么要有值和指针方法集这种限制，为什么不可以值也传递给指针接收者。action 中也给出了回答—<strong>编译器并不是总能自动获得一个值的地址</strong>。这就好像不可能把值传递给一个行参为指针的函数一样，编译器并不总会帮我们主动获取到值的地址。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/11/go语言读书笔记-action系列(方法与接口）/" data-id="cjvxl7tiq000a902xsvsmozlg" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/go接口/">go接口</a></li></ul>
 
     </footer>
   </div>
@@ -1015,7 +969,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>16</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>17</strong><br>文章</div></a>
       <a href="/categories"><div><strong>6</strong><br>分类</div></a>
       <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
