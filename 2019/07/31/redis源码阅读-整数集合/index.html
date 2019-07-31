@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>redis源码阅读-整数集合 | yiranblade&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="redis中整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值，自动选择该用什么长度的整数类型来保存元素。 intset的结构体12345typedef struct intset&amp;#123;    uint32_t encoding;    uint32_t length;    int8_t contents[];&amp;#125;intset; 在这个结构体中encoding">
+<meta name="keywords" content="源码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis源码阅读-整数集合">
+<meta property="og:url" content="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/index.html">
+<meta property="og:site_name" content="yiranblade&#39;s blog">
+<meta property="og:description" content="redis中整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值，自动选择该用什么长度的整数类型来保存元素。 intset的结构体12345typedef struct intset&amp;#123;    uint32_t encoding;    uint32_t length;    int8_t contents[];&amp;#125;intset; 在这个结构体中encoding">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-07-31T07:37:36.800Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis源码阅读-整数集合">
+<meta name="twitter:description" content="redis中整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值，自动选择该用什么长度的整数类型来保存元素。 intset的结构体12345typedef struct intset&amp;#123;    uint32_t encoding;    uint32_t length;    int8_t contents[];&amp;#125;intset; 在这个结构体中encoding">
+  
+    <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/plugin/bganimation/bg.css">
+  
+
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <div class="outer">
+        <div class="widget-wrap mobile-header">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
+    </div>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+        <section id="main"><article id="post-redis源码阅读-整数集合" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/07/31/redis源码阅读-整数集合/" class="article-date">
+  <time class="post-time" datetime="2019-07-31T07:36:31.000Z" itemprop="datePublished">
+    <span class="post-month">7月</span><br>
+    <span class="post-day">31</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      redis源码阅读-整数集合
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis源码阅读/">redis源码阅读</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>redis中整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值，自动选择该用什么长度的整数类型来保存元素。</p>
+<h2 id="intset的结构体"><a href="#intset的结构体" class="headerlink" title="intset的结构体"></a>intset的结构体</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span>&#123;</span></span><br><span class="line">    <span class="keyword">uint32_t</span> encoding;</span><br><span class="line">    <span class="keyword">uint32_t</span> length;</span><br><span class="line">    <span class="keyword">int8_t</span> contents[];</span><br><span class="line">&#125;intset;</span><br></pre></td></tr></table></figure>
+<p>在这个结构体中encoding用来保存元素所使用的类型的长度，length用来保存元素个数，contents保存实际的数据。有意思的是，对于int8_t，实际上contents保存的类型根据实际需要为数据中最大的类型，int8_t在此仅仅作为占位符。</p>
+<h2 id="intset的函数"><a href="#intset的函数" class="headerlink" title="intset的函数"></a>intset的函数</h2><p>定义在intset结构体中的函数或者说可以对其所做的操作涉及以下几种：<br>|函数签名|作用|<br>:-:|:-:<br>|intset <em>intsetNew(void)|创建一个新的intset|<br>|intset </em>intsetAdd(intset <em>is, int64_t value, uint8_t </em>success)|增添一个新的整数元素|<br>|intset <em>intsetRemove(intset </em>is, int64_t value, int <em>success)|删除一个元素|<br>|uint8_t intsetFind(intset </em>is, int64_t value)|检查给定值是否存在于集合|<br>|int64_t intsetRandom(intset <em>is)|从整数集合中随机返回一个元素|<br>|uint8_t intsetGet(intset </em>is, uint32_t pos, int64_t <em>value)|获取元素|<br>|uint32_t intsetLen(const intset </em>is)|元素个数|<br>|size_t intsetBlobLen(intset *is)|返回整数集合占用的内存字节数|</p>
+<h2 id="intset的主要运行"><a href="#intset的主要运行" class="headerlink" title="intset的主要运行"></a>intset的主要运行</h2><h3 id="创建一个新的整数集合"><a href="#创建一个新的整数集合" class="headerlink" title="创建一个新的整数集合"></a>创建一个新的整数集合</h3><p><strong> intset *is = intsetNew() </strong></p>
+<p>当创建一个新的整数集合时，其默认将encoding赋值为_int16的大小，length设置为0。</p>
+<h3 id="添加新元素到-intset"><a href="#添加新元素到-intset" class="headerlink" title="添加新元素到 intset"></a>添加新元素到 intset</h3><p>当将元素添加到整数集合中时，其需要考虑以下情形：</p>
+<ol>
+<li>元素已存在于集合，不做动作；</li>
+<li>元素不存在于集合，并且添加新元素并不需要升级；</li>
+<li>元素不存在于集合，但是要在升级之后，才能添加新元素；<br>而且，intsetAdd 需要维持元素内容的以下性质：<br>确保数组中没有重复元素；<br>确保数组中的元素按由小到大排序；</li>
+</ol>
+<p>所以添加元素函数intsetAdd的主要流程步骤可以如下：</p>
+<div id="flowchart-0" class="flow-chart"></div>
+
+<h3 id="添加新元素到-intset-需要升级"><a href="#添加新元素到-intset-需要升级" class="headerlink" title="添加新元素到 intset(需要升级)"></a>添加新元素到 intset(需要升级)</h3><p>接下来详细，看下当需要对contens进行升级时intsetAdd函数进行的操作。<br>该操作主要由intsetUpgradeAndAdd函数进行。</p>
+<p>该函数的主要任务为：<br>1.对新元素进行检测，看保存的新元素需要什么类型编码；<br>2.将集合encoding属性的值设置为新编码类型，并根据新编码类型，对整个contetns数组进行内存重分配；<br>3.调整contents数组内原有元素在内存中的排列方式，从旧编码调整为新编码。<br>4.将新元素添加到集合中。</p>
+<p>此处重点考虑下理解将旧的编码更改为新的编码。</p>
+<p>假设有个intset，有三个用int16_t方式保存的数值，分别是1、2和3，结构如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">intset-&gt;contents = [1,2,3];</span><br></pre></td></tr></table></figure></p>
+<p>内存排列如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bit   0     15     31     47</span><br><span class="line">value    1      2      3</span><br></pre></td></tr></table></figure></p>
+<p>将一个长度为int32_t的值 65535加入到集合中。<br>1.将encoding设置。<br>2.根据encoding属性的值，对contents数组进行内存重分配。<br>重分配后，contents在内存中的排列如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bit   0     15     31     47     63     95    127</span><br><span class="line">value    1      2      3</span><br></pre></td></tr></table></figure></p>
+<p>contens数组现在有4个int32_t值的空间。<br>3.因为原来的3个int16_t值还“挤在”contents前面的48个位里，所以程序需要移动它们并转换类型，让它们适应集合的新编码方式。<br>4.移除后，将新值65535添加到数组。</p>
+<p>###升级有两个原则</p>
+<ul>
+<li>从较短整数到较长整数的转换，并不会更改元素里面的值</li>
+<li>集合编码元素的方式，由元素中长度最大的那个值来决定</li>
+</ul>
+<p>##总结</p>
+<ul>
+<li>Intset 用于有序、无重复地保存多个整数值，会根据元素的值，自动选择该用什么长度的整数类型来保存元素。</li>
+<li>当一个位长度更长的整数值添加到 intset 时，需要对 intset 进行升级，新 intset 中每个元素的位长度，会等于新添加值的位长度，但原有元素的值不变。</li>
+<li>升级会引起整个 intset 进行内存重分配，并移动集合中的所有元素，这个操作的复杂度为 O(N) 。</li>
+<li>Intset 只支持升级，不支持降级。</li>
+<li>Intset 是有序的，程序使用二分查找算法来实现查找操作，复杂度为 O(lgN)<br><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
+cond1=>condition: 实际值长度大于intset的值长度
+op1=>operation: 对contents进行类型升级后插入值
+cond2=>condition: 判断元素是否重复
+op2=>operation: 为新元素分配内存，并对contents数组中现有的元素进行移动，确保新元素会被放到有序数组正确的位置
+op3=>operation: 将新元素的值保存到contents数组中更新lenght计数器
+op4=>operation: 添加失败
+ed=>end: 结束
+
+st->cond1
+cond1(yes)->op1->ed
+cond1(no)->cond2
+cond2(yes)->op4->ed
+cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjyqxue9h000ten2xdr23xnvn" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/06/02/redis源码阅读-跳跃表/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">redis源码阅读--跳跃表</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <h1 class="blog-title">yiranblade&#39;s blog</h1>
+    <h2 class="blog-subtitle"></h2>
+    <ul class="blog-link">
+     
+          <a href="/" title="Home">
+            <li>主页</li>
+          </a>
+        
+          <a href="/archives" title="Archives">
+            <li>归档</li>
+          </a>
+        
+          <a href="/categories" title="Categories">
+            <li>分类</li>
+          </a>
+        
+          <a href="/tags" title="Tags">
+            <li>标签</li>
+          </a>
+        
+    </ul>
+  </div>
+</div>
+
+  
+    <div class="widget-wrap">
+  <h3 class="widget-title"></h3>
+  <div class="widget">
+    <img class="avatar" src="https://avatars0.githubusercontent.com/u/20333903?v=3&amp;s=460">
+    <h2 class="author"></h2>
+    <h3 class="description"></h3>
+    <div class="count-box">
+      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
+    </div>
+
+
+
+    <div class="social-link">
+      
+        <a class="hvr-bounce-in" href="http://github.com/yiranblade" target="_blank" title="Github">
+          Github
+        </a>
+      
+    </div>
+
+    <div class="friend-link">
+      <h2>友情链接</h2>
+      
+        <a class="hvr-bounce-in" href="http://blog.yiranblade.cn/" target="_blank" title="ShanaMaid">
+          ShanaMaid
+        </a>
+      
+    </div>
+  </div>
+</div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy;2018 - 2019 yiranblade&#39;s blog<br>
+      由<a href="http://hexo.io/" target="_blank">Hexo</a>强力驱动 | 
+      主题-<a href="https://github.com/ShanaMaid/hexo-theme-shana">Shana</a>
+      
+    </div>
+    
+  </div>
+</footer>
+
+    </div>
+    
+
+<script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//apps.bdimg.com/libs/wow/0.1.6/wow.min.js"></script>
+
+<script>
+new WOW().init();
+</script>   
+
+
+  <link rel="stylesheet" href="/plugin/fancybox/jquery.fancybox.css">
+  <script src="/plugin/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+  <link rel="stylesheet" href="/plugin/galmenu/GalMenu.css">
+  <script src="/plugin/galmenu/GalMenu.js"></script>
+  <div class="GalMenu GalDropDown">
+      <div class="circle" id="gal">
+        <div class="ring">
+          
+            <a href="/" title class="menuItem">首页</a>
+          
+            <a href="/tags" title class="menuItem">标签</a>
+          
+            <a href="/categories" title class="menuItem">分类</a>
+          
+            <a href="/archives" title class="menuItem">归档</a>
+          
+            <a href="/xxxxxxxxx" title class="menuItem">xxx</a>
+          
+            <a href="/xxxxxxx" title class="menuItem">xxxx</a>
+          
+        </div>
+        
+          <audio id="audio" src="#"></audio>
+        
+      </div> 
+</div>
+<div id="overlay" style="opacity: 1; cursor: pointer;"></div>
+  <script type="text/javascript">var items = document.querySelectorAll('.menuItem');
+    for (var i = 0,
+    l = items.length; i < l; i++) {
+      items[i].style.left = (50 - 35 * Math.cos( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%";
+      items[i].style.top = (50 + 35 * Math.sin( - 0.5 * Math.PI - 2 * (1 / l) * i * Math.PI)).toFixed(4) + "%"
+    }</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('body').GalMenu({
+      'menu': 'GalDropDown'
+    })
+  });
+</script>
+
+  <section class="hidden-xs"> 
+  <ul class="cb-slideshow"> 
+    <li><span>苟利</span></li> 
+    <li><span>国家</span></li> 
+    <li><span>生死以</span></li> 
+    <li><span>岂能</span></li> 
+    <li><span>祸福</span></li> 
+    <li><span>趋避之</span></li> 
+  </ul>
+</section>
+<script src="/js/script.js"></script>
+
+
+
+
+
+
+
+  </div>
+</body>
+</html>

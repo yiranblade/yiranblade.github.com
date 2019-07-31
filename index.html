@@ -38,7 +38,7 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>17</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
       <a href="/categories"><div><strong>6</strong><br>分类</div></a>
       <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
@@ -65,6 +65,108 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-redis源码阅读-整数集合" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/07/31/redis源码阅读-整数集合/" class="article-date">
+  <time class="post-time" datetime="2019-07-31T07:36:31.000Z" itemprop="datePublished">
+    <span class="post-month">7月</span><br>
+    <span class="post-day">31</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/07/31/redis源码阅读-整数集合/">redis源码阅读-整数集合</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/redis源码阅读/">redis源码阅读</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>redis中整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值，自动选择该用什么长度的整数类型来保存元素。</p>
+<h2 id="intset的结构体"><a href="#intset的结构体" class="headerlink" title="intset的结构体"></a>intset的结构体</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span>&#123;</span></span><br><span class="line">    <span class="keyword">uint32_t</span> encoding;</span><br><span class="line">    <span class="keyword">uint32_t</span> length;</span><br><span class="line">    <span class="keyword">int8_t</span> contents[];</span><br><span class="line">&#125;intset;</span><br></pre></td></tr></table></figure>
+<p>在这个结构体中encoding用来保存元素所使用的类型的长度，length用来保存元素个数，contents保存实际的数据。有意思的是，对于int8_t，实际上contents保存的类型根据实际需要为数据中最大的类型，int8_t在此仅仅作为占位符。</p>
+<h2 id="intset的函数"><a href="#intset的函数" class="headerlink" title="intset的函数"></a>intset的函数</h2><p>定义在intset结构体中的函数或者说可以对其所做的操作涉及以下几种：<br>|函数签名|作用|<br>:-:|:-:<br>|intset <em>intsetNew(void)|创建一个新的intset|<br>|intset </em>intsetAdd(intset <em>is, int64_t value, uint8_t </em>success)|增添一个新的整数元素|<br>|intset <em>intsetRemove(intset </em>is, int64_t value, int <em>success)|删除一个元素|<br>|uint8_t intsetFind(intset </em>is, int64_t value)|检查给定值是否存在于集合|<br>|int64_t intsetRandom(intset <em>is)|从整数集合中随机返回一个元素|<br>|uint8_t intsetGet(intset </em>is, uint32_t pos, int64_t <em>value)|获取元素|<br>|uint32_t intsetLen(const intset </em>is)|元素个数|<br>|size_t intsetBlobLen(intset *is)|返回整数集合占用的内存字节数|</p>
+<h2 id="intset的主要运行"><a href="#intset的主要运行" class="headerlink" title="intset的主要运行"></a>intset的主要运行</h2><h3 id="创建一个新的整数集合"><a href="#创建一个新的整数集合" class="headerlink" title="创建一个新的整数集合"></a>创建一个新的整数集合</h3><p><strong> intset *is = intsetNew() </strong></p>
+<p>当创建一个新的整数集合时，其默认将encoding赋值为_int16的大小，length设置为0。</p>
+<h3 id="添加新元素到-intset"><a href="#添加新元素到-intset" class="headerlink" title="添加新元素到 intset"></a>添加新元素到 intset</h3><p>当将元素添加到整数集合中时，其需要考虑以下情形：</p>
+<ol>
+<li>元素已存在于集合，不做动作；</li>
+<li>元素不存在于集合，并且添加新元素并不需要升级；</li>
+<li>元素不存在于集合，但是要在升级之后，才能添加新元素；<br>而且，intsetAdd 需要维持元素内容的以下性质：<br>确保数组中没有重复元素；<br>确保数组中的元素按由小到大排序；</li>
+</ol>
+<p>所以添加元素函数intsetAdd的主要流程步骤可以如下：</p>
+<div id="flowchart-0" class="flow-chart"></div>
+
+<h3 id="添加新元素到-intset-需要升级"><a href="#添加新元素到-intset-需要升级" class="headerlink" title="添加新元素到 intset(需要升级)"></a>添加新元素到 intset(需要升级)</h3><p>接下来详细，看下当需要对contens进行升级时intsetAdd函数进行的操作。<br>该操作主要由intsetUpgradeAndAdd函数进行。</p>
+<p>该函数的主要任务为：<br>1.对新元素进行检测，看保存的新元素需要什么类型编码；<br>2.将集合encoding属性的值设置为新编码类型，并根据新编码类型，对整个contetns数组进行内存重分配；<br>3.调整contents数组内原有元素在内存中的排列方式，从旧编码调整为新编码。<br>4.将新元素添加到集合中。</p>
+<p>此处重点考虑下理解将旧的编码更改为新的编码。</p>
+<p>假设有个intset，有三个用int16_t方式保存的数值，分别是1、2和3，结构如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">intset-&gt;contents = [1,2,3];</span><br></pre></td></tr></table></figure></p>
+<p>内存排列如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bit   0     15     31     47</span><br><span class="line">value    1      2      3</span><br></pre></td></tr></table></figure></p>
+<p>将一个长度为int32_t的值 65535加入到集合中。<br>1.将encoding设置。<br>2.根据encoding属性的值，对contents数组进行内存重分配。<br>重分配后，contents在内存中的排列如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bit   0     15     31     47     63     95    127</span><br><span class="line">value    1      2      3</span><br></pre></td></tr></table></figure></p>
+<p>contens数组现在有4个int32_t值的空间。<br>3.因为原来的3个int16_t值还“挤在”contents前面的48个位里，所以程序需要移动它们并转换类型，让它们适应集合的新编码方式。<br>4.移除后，将新值65535添加到数组。</p>
+<p>###升级有两个原则</p>
+<ul>
+<li>从较短整数到较长整数的转换，并不会更改元素里面的值</li>
+<li>集合编码元素的方式，由元素中长度最大的那个值来决定</li>
+</ul>
+<p>##总结</p>
+<ul>
+<li>Intset 用于有序、无重复地保存多个整数值，会根据元素的值，自动选择该用什么长度的整数类型来保存元素。</li>
+<li>当一个位长度更长的整数值添加到 intset 时，需要对 intset 进行升级，新 intset 中每个元素的位长度，会等于新添加值的位长度，但原有元素的值不变。</li>
+<li>升级会引起整个 intset 进行内存重分配，并移动集合中的所有元素，这个操作的复杂度为 O(N) 。</li>
+<li>Intset 只支持升级，不支持降级。</li>
+<li>Intset 是有序的，程序使用二分查找算法来实现查找操作，复杂度为 O(lgN)<br><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
+cond1=>condition: 实际值长度大于intset的值长度
+op1=>operation: 对contents进行类型升级后插入值
+cond2=>condition: 判断元素是否重复
+op2=>operation: 为新元素分配内存，并对contents数组中现有的元素进行移动，确保新元素会被放到有序数组正确的位置
+op3=>operation: 将新元素的值保存到contents数组中更新lenght计数器
+op4=>operation: 添加失败
+ed=>end: 结束
+
+st->cond1
+cond1(yes)->op1->ed
+cond1(no)->cond2
+cond2(yes)->op4->ed
+cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjyqxue9h000ten2xdr23xnvn" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-redis源码阅读-跳跃表" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -116,7 +218,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjwefujk6000wwt2xtud2zeha" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjyqxue9i000yen2xrehvza14" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -188,7 +290,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjwefujk80012wt2xh20rfy4u" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjyqxue9j0010en2xebthfghx" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/跳表/">跳表</a></li></ul>
@@ -330,7 +432,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjwefujku0022wt2x1y8xhzcq" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjyqxuea30023en2xz8wdxo7x" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -404,7 +506,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjwefujk70010wt2xr2dlur2b" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjyqxue9g000ren2xqlohl4nm" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -513,7 +615,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjwefujk3000nwt2x3atq37t8" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjyqxue9e000nen2x9vkwek0y" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -583,7 +685,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjwefujkt0021wt2xsdxsqo59" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjyqxuea40025en2xnv1quwse" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -658,7 +760,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjwefujjs0006wt2xm1wobewo" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjyqxue8w0005en2x0kmkk5zl" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -765,7 +867,7 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjwefujjt0007wt2x5w9gn7wv" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjyqxue8v0004en2x8s4o698u" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -830,91 +932,10 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjwefujju0008wt2xvbq6phnm" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjyqxue8x0006en2xx4rqmnvm" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go版本shadowsocks源码(一)" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/03/19/go版本shadowsocks源码(一)/" class="article-date">
-  <time class="post-time" datetime="2019-03-19T12:01:52.000Z" itemprop="datePublished">
-    <span class="post-month">3月</span><br>
-    <span class="post-day">19</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/19/go版本shadowsocks源码(一)/">go版本shadowsocks源码(一)</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/shadowsocks源码/">shadowsocks源码</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="shadowsocks简介"><a href="#shadowsocks简介" class="headerlink" title="shadowsocks简介"></a>shadowsocks简介</h2><p>Shadowsocks（简称SS）是一种基于Socks5代理方式的加密传输协议，也可以指实现这个协议的各种开发包。当前包使用Python、C、C++、C#、Go语言等编程语言开发，大部分主要实现（iOS平台的除外）采用Apache许可证、GPL、MIT许可证等多种自由软件许可协议开放源代码。Shadowsocks分为服务器端和客户端，在使用之前，需要先将服务器端部署到服务器上面，然后通过客户端连接并创建本地代理。</p>
-<p>而socks5协议则是一种网络传输协议，主要用于客户端与外网服务器之间通讯的中间传递。根据OSI七层模型来划分，SOCKS属于会话层协议，位于表示层与传输层之间。</p>
-<p>当防火墙后的客户端要访问外部的服务器时，就跟socks代理服务器连接。该协议设计之初是为了让有权限的用户可以穿过过防火墙的限制，使得高权限用户可以访问外部资源。经过10余年的时间，大量的网络应用程序都支持socks5代理。</p>
-<hr>
-<h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><p>首先我们来看下客户端的代码。</p>
-<h3 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h3><p>go语言和大多数语言一样都是从main函数开始的，在源码阅读的过程我们也从main函数开始逐步往下分析。<br>mian函数整体我认为可以分为三个部分，第一部分读取相关的配置信息，第二部分处理服务器配置信息，第三部分启动客户端，监听本地端口。</p>
-<h4 id="读取客户端启动的配置信息"><a href="#读取客户端启动的配置信息" class="headerlink" title="读取客户端启动的配置信息"></a>读取客户端启动的配置信息</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">                       ......</span><br><span class="line">   flag.BoolVar(&amp;printVer, &quot;version&quot;, false, &quot;print version&quot;)</span><br><span class="line">flag.StringVar(&amp;configFile, &quot;c&quot;, &quot;config.json&quot;, &quot;specify config file&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdServer, &quot;s&quot;, &quot;&quot;, &quot;server address&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.LocalAddress, &quot;b&quot;, &quot;&quot;, &quot;local address, listen only to this address if specified&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Password, &quot;k&quot;, &quot;&quot;, &quot;password&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.ServerPort, &quot;p&quot;, 0, &quot;server port&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.Timeout, &quot;t&quot;, 300, &quot;timeout in seconds&quot;)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.LocalPort, &quot;l&quot;, 0, &quot;local socks5 proxy port&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Method, &quot;m&quot;, &quot;&quot;, &quot;encryption method, default: aes-256-cfb&quot;)</span><br><span class="line">flag.BoolVar((*bool)(&amp;debug), &quot;d&quot;, false, &quot;print debug message&quot;)</span><br><span class="line">flag.StringVar(&amp;cmdURI, &quot;u&quot;, &quot;&quot;, &quot;shadowsocks URI&quot;)</span><br><span class="line">                    ......</span><br><span class="line">                    </span><br><span class="line">config, err := ss.ParseConfig(configFile)</span><br><span class="line">if err != nil &#123;</span><br><span class="line">	config = &amp;cmdConfig</span><br><span class="line">	if !os.IsNotExist(err) &#123;</span><br><span class="line">		fmt.Fprintf(os.Stderr, &quot;error reading %s: %v\n&quot;, configFile, err)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">	ss.UpdateConfig(config, &amp;cmdConfig)</span><br><span class="line">&#125;</span><br><span class="line">if config.Method == &quot;&quot; &#123;</span><br><span class="line">	config.Method = &quot;aes-256-cfb&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>从上述代码中我们可以看到，除了从命令行读取配置信息外，还可以指定json文件读取配置信息。ss的配置信息包括这样几个部分：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">   Server       interface&#123;&#125; `json:&quot;server&quot;`</span><br><span class="line">ServerPort   int         `json:&quot;server_port&quot;`</span><br><span class="line">LocalPort    int         `json:&quot;local_port&quot;`</span><br><span class="line">LocalAddress string      `json:&quot;local_address&quot;`</span><br><span class="line">Password     string      `json:&quot;password&quot;`</span><br><span class="line">Method       string      `json:&quot;method&quot;` // encryption method</span><br><span class="line"></span><br><span class="line">// following options are only used by server</span><br><span class="line">PortPassword map[string]string `json:&quot;port_password&quot;`</span><br><span class="line">Timeout      int               `json:&quot;timeout&quot;`</span><br><span class="line"></span><br><span class="line">// following options are only used by client</span><br><span class="line"></span><br><span class="line">// The order of servers in the client config is significant, so use array</span><br><span class="line">// instead of map to preserve the order.</span><br><span class="line">ServerPassword [][]string `json:&quot;server_password&quot;`</span><br></pre></td></tr></table></figure></p>
-<p>从上往下分为客户端配置和服务端配置，其中客户端配置包括远程服务器ip，服务器端口，本地端口，本地地址访问密码，加密方法，服务端配置包括设定端口密码等。<br>对于go语言来说从命令行读取相应的参数感觉是一件十分方便的事情<br>，只要调用flag包相关函数即可读取并规定想要的格式参数。</p>
-<h4 id="处理服务器配置信息"><a href="#处理服务器配置信息" class="headerlink" title="处理服务器配置信息"></a>处理服务器配置信息</h4><p>服务器配置信息这里使用了两个结构体来存储读取的配置信息。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">type ServerCipher struct &#123;</span><br><span class="line">	server string</span><br><span class="line">	cipher *ss.Cipher</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var servers struct &#123;</span><br><span class="line">	srvCipher []*ServerCipher</span><br><span class="line">	failCnt   []int // failed connection count</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其实阅读这里我是不太理解，为什么要在用一个匿名结构体将server密码信息包起来的，而且servercipher这个名字也怪怪的，因为里面不仅仅包含server的密码信息呀。可能是因为单独记录shi失败次数有利于后续扩展？这个后面想到在补吧。使用数组就很显然了，为了支持配置多个服务。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">func parseServerConfig(config *ss.Config) &#123;</span><br><span class="line">	hasPort := func(s string) bool &#123;</span><br><span class="line">		_, port, err := net.SplitHostPort(s)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			return false</span><br><span class="line">		&#125;</span><br><span class="line">		return port != &quot;&quot;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if len(config.ServerPassword) == 0 &#123;</span><br><span class="line">		// only one encryption table</span><br><span class="line">		cipher, err := ss.NewCipher(config.Method, config.Password)</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">		&#125;</span><br><span class="line">		srvPort := strconv.Itoa(config.ServerPort)</span><br><span class="line">		srvArr := config.GetServerArray()</span><br><span class="line">		n := len(srvArr)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		for i, s := range srvArr &#123;</span><br><span class="line">			if hasPort(s) &#123;</span><br><span class="line">				log.Println(&quot;ignore server_port option for server&quot;, s)</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;s, cipher&#125;</span><br><span class="line">			&#125; else &#123;</span><br><span class="line">				servers.srvCipher[i] = &amp;ServerCipher&#123;net.JoinHostPort(s, srvPort), cipher&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		// multiple servers</span><br><span class="line">		n := len(config.ServerPassword)</span><br><span class="line">		servers.srvCipher = make([]*ServerCipher, n)</span><br><span class="line"></span><br><span class="line">		cipherCache := make(map[string]*ss.Cipher)</span><br><span class="line">		i := 0</span><br><span class="line">		for _, serverInfo := range config.ServerPassword &#123;</span><br><span class="line">			if len(serverInfo) &lt; 2 || len(serverInfo) &gt; 3 &#123;</span><br><span class="line">				log.Fatalf(&quot;server %v syntax error\n&quot;, serverInfo)</span><br><span class="line">			&#125;</span><br><span class="line">			server := serverInfo[0]</span><br><span class="line">			passwd := serverInfo[1]</span><br><span class="line">			encmethod := &quot;&quot;</span><br><span class="line">			if len(serverInfo) == 3 &#123;</span><br><span class="line">				encmethod = serverInfo[2]</span><br><span class="line">			&#125;</span><br><span class="line">			if !hasPort(server) &#123;</span><br><span class="line">				log.Fatalf(&quot;no port for server %s\n&quot;, server)</span><br><span class="line">			&#125;</span><br><span class="line">			// Using &quot;|&quot; as delimiter is safe here, since no encryption</span><br><span class="line">			// method contains it in the name.</span><br><span class="line">			cacheKey := encmethod + &quot;|&quot; + passwd</span><br><span class="line">			cipher, ok := cipherCache[cacheKey]</span><br><span class="line">			if !ok &#123;</span><br><span class="line">				var err error</span><br><span class="line">				cipher, err = ss.NewCipher(encmethod, passwd)</span><br><span class="line">				if err != nil &#123;</span><br><span class="line">					log.Fatal(&quot;Failed generating ciphers:&quot;, err)</span><br><span class="line">				&#125;</span><br><span class="line">				cipherCache[cacheKey] = cipher</span><br><span class="line">			&#125;</span><br><span class="line">			servers.srvCipher[i] = &amp;ServerCipher&#123;server, cipher&#125;</span><br><span class="line">			i++</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	servers.failCnt = make([]int, len(servers.srvCipher))</span><br><span class="line">	for _, se := range servers.srvCipher &#123;</span><br><span class="line">		log.Println(&quot;available remote server&quot;, se.server)</span><br><span class="line">	&#125;</span><br><span class="line">	return</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>处理服务器配置信息主要由parseServerConfig函数完成，老实说我不太喜欢这个函数，写的又臭又长看起来也很费劲，应该很有优化的空间的。<br>函数整体应该分为两个部分，用一个if分支隔离开来。if直接跟的语句负责处理单个服务器配置的信息，else跟的部分负责多个服务器配置信息的解析。整体流程如下：</p>
-<p><div id="flowchart-0" class="flow-chart"></div></p>
-<h4 id="开启go携程监听本地端口"><a href="#开启go携程监听本地端口" class="headerlink" title="开启go携程监听本地端口"></a>开启go携程监听本地端口</h4><p>run方法是比较简单的，使用tcp协议监听指定地址端口，采用轮询机制等待连接请求，一旦等到连接后开启一个goroutine调用 handleConnection()进行处理。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">run</span><span class="params">(listenAddr <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	ln, err := net.Listen(<span class="string">"tcp"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatal(err)</span><br><span class="line">	&#125;</span><br><span class="line">	log.Printf(<span class="string">"starting local socks5 server at %v ...\n"</span>, listenAddr)</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Println(<span class="string">"accept:"</span>, err)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> handleConnection(conn)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>##结语<br>至此，main函数的整体就差不多，接下来我们需要看下在拿到请求后，handleConnection函数是怎样对其进行处理的。</p>
-<p><script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: Start
-op1=>operation: 传入服务器配置信息
-cond=>condition: 是否多个配置项?
-opY1=>operation: 建立ss.Cipher数组
-opY2=>operation: 循环读取配置信息最后写入全局变量servers
-opN1=>operation: 设置加密方法，提取ip数组
-opN2=>operation: 循环设置相关信息
-e=>end
-
-st->op1->cond
-cond(yes)->opY1->opY2->e
-cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/19/go版本shadowsocks源码(一)/" data-id="cjwefujjo0002wt2xfmytr8iy" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
 
     </footer>
   </div>
@@ -969,7 +990,7 @@ cond(no)->opN1->opN2->e</textarea><textarea id="flowchart-0-options" style="disp
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>17</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
       <a href="/categories"><div><strong>6</strong><br>分类</div></a>
       <a href="/tags"><div><strong>11</strong><br>标签</div></a>
     </div>
