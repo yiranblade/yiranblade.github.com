@@ -3,15 +3,20 @@
 <head><meta name="generator" content="Hexo 3.8.0">
   <meta charset="utf-8">
   
-  <title>Tag: tcp | yiranblade&#39;s blog</title>
+  <title>调度算法 | yiranblade&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="yiranblade&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/tags/tcp/index.html">
+  <meta name="description" content="调度层次 高级调度（作业调度） 作业  包含通常的程序和数据，而且还应配有一份作业说明书。   低级调度（进程调度） 调度方式 非抢占方式 抢占方式 优先权原则 短作业优先原则 时间片原则       中级调度 中级调度(Intermediate Level Scheduling)又称中程调度(Medium-Term Scheduling)。引入 中级调度的主要目的是为了提高内存利用率和系统吞吐量">
+<meta name="keywords" content="操作系统复习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="调度算法">
+<meta property="og:url" content="http://yoursite.com/2019/08/01/调度算法/index.html">
 <meta property="og:site_name" content="yiranblade&#39;s blog">
+<meta property="og:description" content="调度层次 高级调度（作业调度） 作业  包含通常的程序和数据，而且还应配有一份作业说明书。   低级调度（进程调度） 调度方式 非抢占方式 抢占方式 优先权原则 短作业优先原则 时间片原则       中级调度 中级调度(Intermediate Level Scheduling)又称中程调度(Medium-Term Scheduling)。引入 中级调度的主要目的是为了提高内存利用率和系统吞吐量">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-08-01T09:44:57.459Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="yiranblade&#39;s blog">
+<meta name="twitter:title" content="调度算法">
+<meta name="twitter:description" content="调度层次 高级调度（作业调度） 作业  包含通常的程序和数据，而且还应配有一份作业说明书。   低级调度（进程调度） 调度方式 非抢占方式 抢占方式 优先权原则 短作业优先原则 时间片原则       中级调度 中级调度(Intermediate Level Scheduling)又称中程调度(Medium-Term Scheduling)。引入 中级调度的主要目的是为了提高内存利用率和系统吞吐量">
   
     <link rel="alternate" href="/atom.xml" title="yiranblade&#39;s blog" type="application/atom+xml">
   
@@ -64,42 +69,115 @@
   </div>
 </div>
 
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap animated rubberBand">
-        <div class="archive-year-wrap">
-          <a href="/archives/2019" class="archive-year">2019</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2019/02/24/TCP连接详解/" class="archive-article-date">
-  <time class="post-time" datetime="2019-02-24T03:33:40.674Z" itemprop="datePublished">
-    <span class="post-month">2月</span><br>
-    <span class="post-day">24</span>
+        <section id="main"><article id="post-调度算法" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/01/调度算法/" class="article-date">
+  <time class="post-time" datetime="2019-08-01T08:45:26.000Z" itemprop="datePublished">
+    <span class="post-month">8月</span><br>
+    <span class="post-day">01</span>
   </time>
 </a>
-      
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/02/24/TCP连接详解/">TCP连接详解</a>
+    <h1 class="article-title" itemprop="name">
+      调度算法
     </h1>
   
 
-    </header>
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/操作系统/">操作系统</a>
   </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="调度层次"><a href="#调度层次" class="headerlink" title="调度层次"></a>调度层次</h2><ul>
+<li>高级调度（作业调度）<ul>
+<li>作业<br>  包含通常的程序和数据，而且还应配有一份作业说明书。</li>
+</ul>
+</li>
+<li>低级调度（进程调度）<ul>
+<li>调度方式<ul>
+<li>非抢占方式</li>
+<li>抢占方式<ul>
+<li>优先权原则</li>
+<li>短作业优先原则</li>
+<li>时间片原则</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>中级调度<ul>
+<li>中级调度(Intermediate Level Scheduling)又称中程调度(Medium-Term Scheduling)。引入 中级调度的主要目的是为了提高内存利用率和系统吞吐量。 </li>
+</ul>
+</li>
+</ul>
+<h2 id="调度算法"><a href="#调度算法" class="headerlink" title="调度算法"></a>调度算法</h2><p>1.先来先服务调度算法（FCFS）<br>2.短作业优先调度算法（SJF）<br>3.高响应比优先调度算法<br>4.时间片轮转<br>5.多级反馈队列调度</p>
+<p>##死锁的原因和必要条件</p>
+<ul>
+<li>原因<br>（1）竞争资源<br>（2）进程间推进顺序非法。</li>
+<li><p>必要条件<br>1.互斥条件<br>2.请求和保持条件<br>3.不可剥夺条件<br>4.环路等待条件</p>
+</li>
+<li><p>解决死锁的方法</p>
+<ol>
+<li>预防死锁<ul>
+<li>摒弃“请求和保持”条件 </li>
+<li>摒弃“不剥夺”条件</li>
+<li>摒弃“环路等待”条件</li>
+</ul>
+</li>
+<li>避免死锁<ul>
+<li>安全状态 </li>
+</ul>
+</li>
+<li>检测死锁</li>
+<li>解除死锁</li>
+</ol>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/08/01/调度算法/" data-id="cjyshtzra0017kz2xunapg8fb" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/操作系统复习/">操作系统复习</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/08/01/进程相关/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">下一篇</strong>
+      <div class="article-nav-title">进程相关</div>
+    </a>
+  
+</nav>
+
+  
 </article>
-  
-  
-    </div></section>
-  
+
+
 
 </section>
         
