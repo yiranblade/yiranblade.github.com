@@ -38,9 +38,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>19</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>7</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>12</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -65,6 +65,156 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-进程相关" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/01/进程相关/" class="article-date">
+  <time class="post-time" datetime="2019-08-01T06:37:35.000Z" itemprop="datePublished">
+    <span class="post-month">8月</span><br>
+    <span class="post-day">01</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/08/01/进程相关/">进程相关</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/操作系统/">操作系统</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><p>试说明进程在三个基本状态之间转换的典型原因</p>
+<ul>
+<li>就绪状态-&gt;执行状态：进程分配到CPU资源</li>
+<li>执行状态-&gt;就绪状态：时间片用完</li>
+<li>执行状态-&gt;阻塞状态: I/O请求；</li>
+<li>阻塞状态-&gt;就绪状态: I/O完成。</li>
+</ul>
+</li>
+<li><p>PV操作</p>
+<ul>
+<li>概念:PV操作与信号量的处理相关，P表示通过的意思，V表示释放的意思。</li>
+<li>所谓信号灯，实际上就是用来控制进程状态的一个代表某一资源的存储单元。例如，p1和p2是分别将数据送入缓冲B和从缓冲B读出数据的两个进程，为了防止这两个进程并发时产生错误，Dijkstra设计了一种同步机制叫“PV操作”，P操作和V操作是执行时不被打断的两个操作系统原语。</li>
+<li>PV原语:PV操作是典型的同步机制之一。用一个信号量与一个消息联系起来，当信号量的值为0时，表示期望的消息尚未产生</li>
+</ul>
+</li>
+<li><p>经典进程同步问题</p>
+<ul>
+<li>生产者-消费者问题<ul>
+<li>概念:假设有两个共享固定大小缓冲区的线程–即所谓的”生产者”和”消费者”—在实际运行时会发生问题。</li>
+<li>问题:生产者的主要作用是生成一定量的数据放到缓冲区中，然后重复此过程。与此同时，消费者也在缓冲区消耗这些数据。该问题的关键就是要保证生产者不会在缓冲区满时加入数据，消费者也不会在缓冲区中空时消耗数据。</li>
+<li>解决方法：令生产者在缓冲区满时休眠，等到下次消费者消耗缓冲区中的数据的时候，生产者才能被唤醒，开始往缓冲区添加数据。 同样，也可以让消费者在缓冲区空时进入休眠，等到生产者往缓冲区添加数据之后，再唤醒消费者。</li>
+<li>信号量实现:<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">多生产者-多消费者问题</span><br><span class="line">Process Pi(1...m);//生产者</span><br><span class="line">.....</span><br><span class="line">Repeat</span><br><span class="line">//生产一个产品</span><br><span class="line">wait(buffer);</span><br><span class="line">wait(S);</span><br><span class="line">//送产品到Buffer(in)</span><br><span class="line">in=(int+1)mod n;</span><br><span class="line">singal(s);</span><br><span class="line">singal(prod);</span><br><span class="line">Process Pi(1...m);//消费者</span><br><span class="line">.....</span><br><span class="line">Repeat</span><br><span class="line">//生产一个产品</span><br><span class="line">wait(prod);</span><br><span class="line">wait(S);</span><br><span class="line">//送产品到Buffer(in)</span><br><span class="line">out=(out+1)mod N;</span><br><span class="line">singal(s);</span><br><span class="line">singal(buf);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="进程控制块"><a href="#进程控制块" class="headerlink" title="进程控制块"></a>进程控制块</h2><ul>
+<li>作用<br>使一个在多道程序环境下不能独立运行的程序，称为一个能独立运行的基本单位，一个能与其它进程并发执行的进程。</li>
+<li><p>结构</p>
+<ul>
+<li><p>进程标识符</p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">进程标识符用于唯一地标识一个进程。</span><br><span class="line">（1）内部标识符。（方便系统）</span><br><span class="line"> (2) 外部标识符。（方便用户）</span><br></pre></td></tr></table></figure>
+</code></pre></li>
+<li><p>处理机状态</p>
+</li>
+<li>进程调度信息  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(1)进程状态</span><br><span class="line">(2)进程优先级</span><br><span class="line">(3)进程调度所需的其它信息</span><br><span class="line">(4)事件</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<pre><code>+ 进程控制信息
+
+    <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(1)程序和数据的地址</span><br><span class="line">(2)进程同步和通信 机制</span><br><span class="line">(3)资源清单</span><br><span class="line">(4)链接指针</span><br></pre></td></tr></table></figure>
+</code></pre><ul>
+<li>组织方式<ul>
+<li>链接方式</li>
+<li>索引方式</li>
+</ul>
+</li>
+</ul>
+<h1 id="进程同步"><a href="#进程同步" class="headerlink" title="进程同步"></a>进程同步</h1><h2 id="两种制约关系"><a href="#两种制约关系" class="headerlink" title="两种制约关系"></a>两种制约关系</h2><ul>
+<li>间接相互制约关系（共享资源）</li>
+<li>直接相互制约关系（合作）</li>
+</ul>
+<h2 id="同步机制应遵循的规则"><a href="#同步机制应遵循的规则" class="headerlink" title="同步机制应遵循的规则"></a>同步机制应遵循的规则</h2><ul>
+<li>空闲让进</li>
+<li>忙则等待</li>
+<li>有限等待</li>
+<li>让权等待</li>
+</ul>
+<h2 id="进程同步机制"><a href="#进程同步机制" class="headerlink" title="进程同步机制"></a>进程同步机制</h2><ul>
+<li><p>信号量机制</p>
+<ul>
+<li>整型信号量</li>
+<li>记录型信号量</li>
+<li>AND型信号量</li>
+<li>信号量集</li>
+</ul>
+</li>
+<li><p>管程机制<br>一个管程定义了一个数据结构和能为并发进程所执行的一组操作，这组操作能同步进程和改变管程中的数据。</p>
+<ul>
+<li>管程的名称</li>
+<li>局部于管程内部的共享数据结构说明</li>
+<li>对该数据结构进行操作的一组过程</li>
+<li>对局部于管程内部的共享数据设置初始值的语句</li>
+</ul>
+</li>
+</ul>
+<h2 id="进程通信"><a href="#进程通信" class="headerlink" title="进程通信"></a>进程通信</h2><ul>
+<li>共享存储器系统</li>
+<li>消息传递系统</li>
+<li>管道通信</li>
+</ul>
+<h1 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h1><ul>
+<li>属性<ul>
+<li>轻型实体<br>  不拥有系统资源，独立tcb，用于指示被执行指令序列的程序计数器，保留局部变量、少数状态参数和返回地址等的一组寄存器和堆栈    </li>
+<li>可独立调度和分派的基本单位</li>
+<li>可并发执行</li>
+<li>共享进程资源</li>
+</ul>
+</li>
+<li>实现方式<br>  1.内核支持线程<br>  2.用户级线程</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/08/01/进程相关/" data-id="cjysb8e800011lv2xl3ghg62t" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/操作系统复习/">操作系统复习</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-redis源码阅读-整数集合" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -154,7 +304,7 @@ cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjyqxue9h000ten2xdr23xnvn" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjysb8e7z000zlv2xiou8v84l" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -218,7 +368,7 @@ cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjyqxue9i000yen2xrehvza14" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjysb8e820016lv2xe03se8p3" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -290,7 +440,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjyqxue9j0010en2xebthfghx" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjysb8e830019lv2xmuv247hp" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/跳表/">跳表</a></li></ul>
@@ -432,7 +582,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjyqxuea30023en2xz8wdxo7x" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjysb8e8u0029lv2xyjymb8o8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -506,7 +656,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjyqxue9g000ren2xqlohl4nm" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjysb8e7y000vlv2xcv99tfqp" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -615,7 +765,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjyqxue9e000nen2x9vkwek0y" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjysb8e7u000mlv2xkp3jrqip" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -685,7 +835,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjyqxuea40025en2xnv1quwse" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjysb8e8v002blv2xgwzvtr4q" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -760,7 +910,7 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjyqxue8w0005en2x0kmkk5zl" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjysb8e7e0006lv2xu9ryk4db" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -867,75 +1017,10 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjyqxue8v0004en2x8s4o698u" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/03/28/go版本shadowsocks源码-二/" data-id="cjysb8e7c0005lv2x6ziiztzq" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
-    <article id="post-go语言读书笔记-aciton系列（并发）" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/03/27/go语言读书笔记-aciton系列（并发）/" class="article-date">
-  <time class="post-time" datetime="2019-03-27T09:43:48.000Z" itemprop="datePublished">
-    <span class="post-month">3月</span><br>
-    <span class="post-day">27</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/03/27/go语言读书笔记-aciton系列（并发）/">go语言读书笔记-aciton系列（并发）</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/《go语言实战》读书笔记/">《go语言实战》读书笔记</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>终于到并发了，阅读本章总有种go对并发的处理简洁高效的感觉。action系列举的实战例子也很通俗易懂，感觉运用一些实际的项目实践应该理解会更加深刻。</p>
-<h2 id="goroutine"><a href="#goroutine" class="headerlink" title="goroutine"></a>goroutine</h2><p>操作系统会在物理处理器上调度线程来运行程序，而Go语言运行时会在逻辑处理器上调用goroutine来运行。每个逻辑处理器都分别绑定到单个操作系统线程。<br>em。。goroutine可以理解为携程，就像这样。<br><img src="http://static.zybuluo.com/yiranblade/3efzy0kylh5qa5gt84q8e2dn/image_1d6fdftt11ti71crn1qn2c791uls9.png" alt="image_1d6fdftt11ti71crn1qn2c791uls9.png-230.1kB"><br>携程运行于线程之上，比线程更加轻量级。goroutine运行于逻辑处理器，而逻辑处理器就对应一个操作系统线程，其可以并发调度无数个groutine。</p>
-<p>goroutine也可以并行运行，只要使用超过一个的逻辑处理器。但是只要底层硬件层面只有一个处理器，即使创建了多个逻辑处理器也依然是并发运行。<br><img src="http://static.zybuluo.com/yiranblade/2b8csvfn7li8kccrb5ftzl4p/image_1d6felqb512qn1r251k38110tchqm.png" alt="image_1d6felqb512qn1r251k38110tchqm.png-183.9kB"><br>并发并行的区别正如书上的图所示。<br>通过设置参数可以给每个可用的物理处理器分配一个逻辑处理器，从而达到并行的目的。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">import &quot;runtime&quot;</span><br><span class="line"></span><br><span class="line">runtime.GOMAXPROCS(runtime.NumCpu())</span><br></pre></td></tr></table></figure></p>
-<h2 id="同步goroutine"><a href="#同步goroutine" class="headerlink" title="同步goroutine"></a>同步goroutine</h2><p>在写并发代码时，往往都会遇到竞争状态的问题。这就需要采用一些同步手段来得到正确的结果。go语言提供了锁的机制来同步。</p>
-<h3 id="原子函数"><a href="#原子函数" class="headerlink" title="原子函数"></a>原子函数</h3><p>go sync包提供了一些常用的操作的原子函数。当使用这些函数来读，写时，其都会自动根据所引用的变量做同步处理。已addint64函数示例:<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"fmt"</span></span><br><span class="line">    <span class="string">"runtime"</span></span><br><span class="line">    <span class="string">"sync"</span></span><br><span class="line">    <span class="string">"sync/atomic"</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">    counter <span class="keyword">int64</span></span><br><span class="line">    wg sync.WaitGroup</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    wg.Add(<span class="number">2</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">go</span> incCounter(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">go</span> incCounter(<span class="number">2</span>)</span><br><span class="line">    </span><br><span class="line">    wg.Wait()</span><br><span class="line">    </span><br><span class="line">    fmt.Println(<span class="string">"Final Counter:"</span>,counter)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">incCounter</span><span class="params">(id <span class="keyword">int</span>)</span></span>&#123;</span><br><span class="line">    <span class="keyword">defer</span> wg.Done()</span><br><span class="line">    <span class="keyword">for</span> count :=<span class="number">0</span>; count&lt;<span class="number">2</span>;count++&#123;</span><br><span class="line">        atomic.AddInt64(&amp;counter,<span class="number">1</span>)</span><br><span class="line">        runtime.Goshed()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>程序一开始创建两个goroutine形成对counter变量的竞争条件。而AddInt64函数则强制同一时刻 只能有一个goroutine运行并完成这个加法操作。当goroutine试图取d去调用任何原子函数时，这些goroutine都会自动根据所引用的变量做同步处理。</p>
-<h3 id="互斥锁"><a href="#互斥锁" class="headerlink" title="互斥锁"></a>互斥锁</h3><p>互斥锁就和我们通常使用的许多语言中的锁机制一样，在代码中创建一个临界区，保证同一时间只有一个goroutine可以执行这个临界区的代码。<br>对刚刚的程序使用锁机制同步就是这样的:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import (</span><br><span class="line">    &quot;fmt&quot;</span><br><span class="line">    &quot;runtime&quot;</span><br><span class="line">    &quot;sync&quot;</span><br><span class="line">    &quot;sync/atomic&quot;</span><br><span class="line">)</span><br><span class="line">var (</span><br><span class="line">    counter int64</span><br><span class="line">    wg sync.WaitGroup</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">    wg.Add(2)</span><br><span class="line">    </span><br><span class="line">    go incCounter(1)</span><br><span class="line">    go incCounter(2)</span><br><span class="line">    </span><br><span class="line">    wg.Wait()</span><br><span class="line">    </span><br><span class="line">    fmt.Println(&quot;Final Counter:&quot;,counter)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">func incCounter(id int)&#123;</span><br><span class="line">    defer wg.Done()</span><br><span class="line">    for count :=0; count&lt;2;count++&#123;</span><br><span class="line">        mutex.Lock()</span><br><span class="line">        &#123;</span><br><span class="line">            value := counter</span><br><span class="line">            runtime.Gosched()</span><br><span class="line">            value++</span><br><span class="line">            counter = value</span><br><span class="line">        &#125;</span><br><span class="line">        mutex.UnLock()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>同一时刻只能有一个goroutine可以进入临界区。之后，直到调用Unlock()函数之后，其他goroutine才能进入临界区。</p>
-<h3 id="通道"><a href="#通道" class="headerlink" title="通道"></a>通道</h3><p>go语言中提供了通道，通过发送和接收需要共享的资源，在goroutine之间做同步。<br><strong>通道分为无缓冲通道和有缓冲的通道。无缓冲的通道是指在接收前没有能力保存任何值的通道。这种类型的通道要求发送goroutine和接收goroutine同时准备好，才能完成发送和接收操作。如果两个goroutine没有同时准备好，通道会导致先执行发送或接收操作的goroutine阻塞等待。这种对通道进行发送和接收的交互行为本身就是同步的。</strong></p>
-<p><strong>有缓冲的通道是一种在被接收前能存储一个或者多个值的通道。这种类型的通道并不强制要求goroutine之间必须同时完成发送和接收。通道会阻塞发送和接收动作的条件也会不同。只有在通道中没有要接收的值时，接收动作才会阻塞。只有在通道没有可用缓冲区容纳被发送的值的时，发送动作才会阻塞。这导致有缓冲的通道和无缓冲的通道之间有一个很大的不同：无缓冲的通道保证进行发送和接收的goroutine会在同一时间进行数据交换了；有缓冲的通道没有这种保证。</strong></p>
-<h2 id="感悟"><a href="#感悟" class="headerlink" title="感悟"></a>感悟</h2><p>至此，对于goaction系列中对于go语言语法特性的部分，就算是阅读完毕了。书中举了很多这些语法的实际应用场景例子，但是实际掌握还是需要自己动手写以及多看看别人项目的源代码，个人感觉这样才能得到最快的提升。所以接下来的action章节读书笔记，就主要记录书中实际的demo吧。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/03/27/go语言读书笔记-aciton系列（并发）/" data-id="cjyqxue8x0006en2xx4rqmnvm" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/并发/">并发</a></li></ul>
 
     </footer>
   </div>
@@ -990,9 +1075,9 @@ stat->op1->op2->op3->op4->op5->ed</textarea><textarea id="flowchart-0-options" s
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>18</strong><br>文章</div></a>
-      <a href="/categories"><div><strong>6</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>11</strong><br>标签</div></a>
+      <a href="/archives"><div><strong>19</strong><br>文章</div></a>
+      <a href="/categories"><div><strong>7</strong><br>分类</div></a>
+      <a href="/tags"><div><strong>12</strong><br>标签</div></a>
     </div>
 
 
