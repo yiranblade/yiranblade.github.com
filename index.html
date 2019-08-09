@@ -38,9 +38,9 @@
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>20</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>21</strong><br>文章</div></a>
       <a href="/categories"><div><strong>7</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>12</strong><br>标签</div></a>
+      <a href="/tags"><div><strong>13</strong><br>标签</div></a>
     </div>
     <ul class="blog-link">
      
@@ -65,6 +65,137 @@
 </div>
 
         <section id="main">
+  
+    <article id="post-链表-go语言实现" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/09/链表-go语言实现/" class="article-date">
+  <time class="post-time" datetime="2019-08-09T09:49:41.000Z" itemprop="datePublished">
+    <span class="post-month">8月</span><br>
+    <span class="post-day">09</span>
+  </time>
+</a>
+   
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/08/09/链表-go语言实现/">链表-go语言实现</a>
+    </h1>
+  
+
+        <div>
+          
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/数据结构与算法/">数据结构与算法</a>
+  </div>
+
+          
+              
+
+          
+        </div>
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近复习数据结构与算法，正好也顺带练习下go语言。</p>
+<h2 id="结构体定义"><a href="#结构体定义" class="headerlink" title="结构体定义"></a>结构体定义</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> node <span class="keyword">struct</span> &#123;</span><br><span class="line">	value <span class="keyword">int</span></span><br><span class="line">	next  *node</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(node *node)</span> <span class="title">setValue</span><span class="params">(value <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	node.value = value</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(node *node)</span> <span class="title">getValue</span><span class="params">(value <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> node.value</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先定义链表的结点并定义与其关联的getset方法用来操作结点的值。此处和java等面向对象的语言有些不同，go语言方法接收一个定义的结点类型的变量，并修改其值，由于go本身是值传递，此处接收者定义为指针。</p>
+<h2 id="相关操作方法定义"><a href="#相关操作方法定义" class="headerlink" title="相关操作方法定义"></a>相关操作方法定义</h2><p>对于一个链表来说，自然对其少不了增删改查的操作故定义以下五个方法：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">方法名</th>
+<th>声明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">创建新链表</td>
+<td>newList()</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">增加链表值</td>
+<td>add()</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">删除链表值</td>
+<td>delete(index int)</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">修改链表值</td>
+<td>update(index int,value int)</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center"></td>
+<td style="text-align:center">查找链表值</td>
+<td>find(value int) int</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>创建新链表</p>
+  <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newList</span><span class="params">()</span> <span class="title">node</span></span> &#123;</span><br><span class="line"> <span class="keyword">return</span> node&#123;</span><br><span class="line">  value: <span class="number">-1</span>,</span><br><span class="line">  next:  <span class="literal">nil</span>,</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这个方法做的操作很简单，主要是初始化了链表的头节点并返回头节点的实例，表示该链表建立以便进行后续的增删改查等操作。</p>
+<ul>
+<li>给链表增加值</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">add</span><span class="params">(value <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> temp *node = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	newNode := <span class="built_in">new</span>(node)</span><br><span class="line">	newNode.value = value</span><br><span class="line">	newNode.next = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	temp = list.next</span><br><span class="line">	list.next = newNode</span><br><span class="line">	newNode.next = temp</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当需要给链表中插入新值时，首先需要申请容纳新值的空间，如代码中第5行所示，其申请了一个node类型的空间并将新值放进去。接下来采用头插法node插入链表，操作完成。</p>
+<ul>
+<li>删除链表值</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">delete</span><span class="params">(index <span class="keyword">int</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> temp *node = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	temp = list;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= index; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> (i == index &amp;&amp; temp.next != <span class="literal">nil</span>) &#123;</span><br><span class="line">			temp.next = temp.next.next;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			temp = temp.next</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> errors.New(<span class="string">"删除失败"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>个人感觉这种实现方式有点low，但是如果在结构体中设置下标，维护下标又需要成本，且按位置删除总要先找到位置，在列表无序的情况下这样做也还算清晰，但还是low。（其实也可以按值删除，第一个符合的删去）重点理解删除思想。<br>将待删节点的前一个节点的next指向待删节点的下一个节点，就算ok。</p>
+<ul>
+<li>更新链表指定位置的值</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">update</span><span class="params">(index <span class="keyword">int</span>, value <span class="keyword">int</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> temp *node = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	temp = list;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= index; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> (i == index &amp;&amp; temp.next != <span class="literal">nil</span>) &#123;</span><br><span class="line">			temp.next.value = value;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			temp = temp.next</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> errors.New(<span class="string">"更新失败"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此处和删除逻辑流程差不多，都是先找到需要操作的节点，不同的是一个删除，一个仅仅是更新value。</p>
+<ul>
+<li>查找链表值</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">find</span><span class="params">(value <span class="keyword">int</span>)</span> <span class="params">(index <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	list = list.next</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; list != <span class="literal">nil</span>; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> list.value == value &#123;</span><br><span class="line">			index = i</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		list = list.next</span><br><span class="line">	&#125;</span><br><span class="line">	index = <span class="number">-1</span></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此处主要是在匹配值，如果匹配则返回元素所在的位置找不到则返回-1，下标从1开始，头结点不存储值所以去除。这里也可以看出go语言返回值的特色，可以在函数签名中进行返回值变量的声明，这样就可以直接在代码中yin引用，最后return即可，个人觉得这个特性有利于代码的整洁度。</p>
+<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">type</span> node <span class="keyword">struct</span> &#123;</span><br><span class="line">	value <span class="keyword">int</span></span><br><span class="line">	next  *node</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(node *node)</span> <span class="title">setValue</span><span class="params">(value <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	node.value = value</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(node *node)</span> <span class="title">getValue</span><span class="params">(value <span class="keyword">int</span>)</span> <span class="title">int</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> node.value</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newList</span><span class="params">()</span> <span class="title">node</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> node&#123;</span><br><span class="line">		value: <span class="number">-1</span>,</span><br><span class="line">		next:  <span class="literal">nil</span>,</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">add</span><span class="params">(value <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> temp *node = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	newNode := <span class="built_in">new</span>(node)</span><br><span class="line">	newNode.value = value</span><br><span class="line">	newNode.next = <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">	temp = list.next</span><br><span class="line">	list.next = newNode</span><br><span class="line">	newNode.next = temp</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">delete</span><span class="params">(index <span class="keyword">int</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= index; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> (i == index &amp;&amp; list.next != <span class="literal">nil</span>) &#123;</span><br><span class="line">			list.next = list.next.next;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			list = list.next</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> errors.New(<span class="string">"删除失败"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">update</span><span class="params">(index <span class="keyword">int</span>, value <span class="keyword">int</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt;= index; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> (i == index &amp;&amp; list.next != <span class="literal">nil</span>) &#123;</span><br><span class="line">			list.next.value = value;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line"></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			list = list.next</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> errors.New(<span class="string">"更新失败"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(list *node)</span> <span class="title">find</span><span class="params">(value <span class="keyword">int</span>)</span> <span class="params">(index <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	list = list.next</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; list != <span class="literal">nil</span>; i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> list.value == value &#123;</span><br><span class="line">			index = i</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		list = list.next</span><br><span class="line">	&#125;</span><br><span class="line">	index = <span class="number">-1</span></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是这次所定义的链表，以及对其所定义的一系列操作，下面运行看看我们的程序是否可以正常运行。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> list Node</span><br><span class="line">	list = NewList()</span><br><span class="line">	list.add(<span class="number">1</span>)</span><br><span class="line">	list.add(<span class="number">2</span>)</span><br><span class="line">	list.add(<span class="number">3</span>)</span><br><span class="line">	<span class="built_in">println</span>(list.find(<span class="number">1</span>), list.find(<span class="number">2</span>), list.find(<span class="number">3</span>))</span><br><span class="line">	err := list.<span class="built_in">delete</span>(<span class="number">1</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">println</span>(err)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">println</span>(list.find(<span class="number">3</span>))</span><br><span class="line"></span><br><span class="line">	err = list.update(<span class="number">2</span>, <span class="number">9</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">println</span>(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">println</span>(list.find(<span class="number">9</span>))</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：<br><img src="http://static.zybuluo.com/yiranblade/egdzthhwg2da1bkpqlsdtok3/image.png" alt="image.png-9.2kB"></p>
+<p>  可以看到结果正如我们所期待的那样，先给链表中插入三个值，1，2，3.由于是按照头插法插入的，所以输出顺序为逆序。紧接着删除掉第一个位置的元素3，然后3不存在结果输出-1。然后再更新第二个位置的元素为9，输出9确实在第二个位置。</p>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>链表其本质上就是一组离散结构的顺序表，使用任何语言都可以实现，其类型包括单向链表，双向链表，单向循环链表，双向循环链表等。在日常编程中具有相当广的应用范围，本次我们仅仅是用其完成了一个具有简单增删改查功能的列表容器结构，算是简单的小回顾复习了下吧。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/08/09/链表-go语言实现/" data-id="cjz3xkvsf001f2j2x19o8873e" class="article-share-link">分享</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/链表/">链表</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
   
     <article id="post-调度算法" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
@@ -152,7 +283,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/08/01/调度算法/" data-id="cjyshtzra0017kz2xunapg8fb" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/08/01/调度算法/" data-id="cjz3xkvsc00182j2xxw5y5wim" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/操作系统复习/">操作系统复习</a></li></ul>
@@ -302,7 +433,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/08/01/进程相关/" data-id="cjyshtzrb001akz2xjy8o77av" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/08/01/进程相关/" data-id="cjz3xkvse001c2j2x07mjeva9" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/操作系统复习/">操作系统复习</a></li></ul>
@@ -404,7 +535,7 @@ cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjyshtzr80012kz2xzlbuatga" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/07/31/redis源码阅读-整数集合/" data-id="cjz3xkvs8000z2j2xo7eo18o8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -468,7 +599,7 @@ cond2(no)->op2->op3->ed</textarea><textarea id="flowchart-0-options" style="disp
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjyshtzr70010kz2x4p7yf21p" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/06/02/redis源码阅读-跳跃表/" data-id="cjz3xkvs900112j2xwk1uhzo8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -540,7 +671,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjyshtzrc001ekz2xw7sjmddm" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/21/理解跳跃表/" data-id="cjz3xkvsb00162j2xf6uy01il" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/跳表/">跳表</a></li></ul>
@@ -682,7 +813,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjyshtzs0002fkz2x4pocvpz8" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/05/11/redis源码阅读-字典/" data-id="cjz3xkvt0002k2j2xdlwa3kie" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -756,7 +887,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjyshtzr6000vkz2xwgybfi3l" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/27/redis源码阅读-双端链表/" data-id="cjz3xkvs6000u2j2x9rj6o2p8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -865,7 +996,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjyshtzr3000pkz2x70aq2lpp" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/20/redis源码阅读-动态字符串/" data-id="cjz3xkvs5000s2j2xexs8t0ol" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
@@ -935,7 +1066,7 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjyshtzs1002gkz2xfw5cb7rj" class="article-share-link">分享</a>
+      <a data-url="http://yoursite.com/2019/04/14/垃圾代码重构-《代码整洁之道》-读后感/" data-id="cjz3xkvt2002m2j2x33wx4xn8" class="article-share-link">分享</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码优化/">代码优化</a></li></ul>
@@ -949,85 +1080,10 @@ st->input->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" s
 
 
   
-    <article id="post-go版本shadowsocks源码-终章" class="wow slideInRight article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/04/01/go版本shadowsocks源码-终章/" class="article-date">
-  <time class="post-time" datetime="2019-04-01T09:00:52.000Z" itemprop="datePublished">
-    <span class="post-month">4月</span><br>
-    <span class="post-day">01</span>
-  </time>
-</a>
-   
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/04/01/go版本shadowsocks源码-终章/">go版本shadowsocks源码-终章</a>
-    </h1>
-  
-
-        <div>
-          
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/shadowsocks源码/">shadowsocks源码</a>
-  </div>
-
-          
-              
-
-          
-        </div>
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本节我们来看一下shadowsocks-server端的源码。server端相比local端要简单不少，其所做的主要工作就是解码请求并返回结果。</p>
-<h2 id="main"><a href="#main" class="headerlink" title="main"></a>main</h2><p>照例我们从main函数开始分析其大致流程。<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	log.SetOutput(os.Stdout)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> cmdConfig ss.Config</span><br><span class="line">	<span class="keyword">var</span> printVer <span class="keyword">bool</span></span><br><span class="line">	<span class="keyword">var</span> core <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line">	flag.BoolVar(&amp;printVer, <span class="string">"version"</span>, <span class="literal">false</span>, <span class="string">"print version"</span>)</span><br><span class="line">	flag.StringVar(&amp;configFile, <span class="string">"c"</span>, <span class="string">"config.json"</span>, <span class="string">"specify config file"</span>)</span><br><span class="line">	flag.StringVar(&amp;cmdConfig.Password, <span class="string">"k"</span>, <span class="string">""</span>, <span class="string">"password"</span>)</span><br><span class="line">	flag.IntVar(&amp;cmdConfig.ServerPort, <span class="string">"p"</span>, <span class="number">0</span>, <span class="string">"server port"</span>)</span><br><span class="line">	flag.IntVar(&amp;cmdConfig.Timeout, <span class="string">"t"</span>, <span class="number">300</span>, <span class="string">"timeout in seconds"</span>)</span><br><span class="line">	flag.StringVar(&amp;cmdConfig.Method, <span class="string">"m"</span>, <span class="string">""</span>, <span class="string">"encryption method, default: aes-256-cfb"</span>)</span><br><span class="line">	flag.IntVar(&amp;core, <span class="string">"core"</span>, <span class="number">0</span>, <span class="string">"maximum number of CPU cores to use, default is determinied by Go runtime"</span>)</span><br><span class="line">	flag.BoolVar((*<span class="keyword">bool</span>)(&amp;debug), <span class="string">"d"</span>, <span class="literal">false</span>, <span class="string">"print debug message"</span>)</span><br><span class="line">	flag.BoolVar((*<span class="keyword">bool</span>)(&amp;sanitizeIps), <span class="string">"A"</span>, <span class="literal">false</span>, <span class="string">"anonymize client ip addresses in all output"</span>)</span><br><span class="line">	flag.BoolVar(&amp;udp, <span class="string">"u"</span>, <span class="literal">false</span>, <span class="string">"UDP Relay"</span>)</span><br><span class="line">	flag.StringVar(&amp;managerAddr, <span class="string">"manager-address"</span>, <span class="string">""</span>, <span class="string">"shadowsocks manager listening address"</span>)</span><br><span class="line">	flag.Parse()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> printVer &#123;</span><br><span class="line">		ss.PrintVersion()</span><br><span class="line">		os.Exit(<span class="number">0</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ss.SetDebug(debug)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	config, err = ss.ParseConfig(configFile)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> !os.IsNotExist(err) &#123;</span><br><span class="line">			fmt.Fprintf(os.Stderr, <span class="string">"error reading %s: %v\n"</span>, configFile, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		config = &amp;cmdConfig</span><br><span class="line">		ss.UpdateConfig(config, config)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		ss.UpdateConfig(config, &amp;cmdConfig)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> config.Method == <span class="string">""</span> &#123;</span><br><span class="line">		config.Method = <span class="string">"aes-256-cfb"</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err = ss.CheckCipherMethod(config.Method); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Fprintln(os.Stderr, err)</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err = unifyPortPassword(config); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> core &gt; <span class="number">0</span> &#123;</span><br><span class="line">		runtime.GOMAXPROCS(core)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> port, password := <span class="keyword">range</span> config.PortPassword &#123;</span><br><span class="line">		<span class="keyword">go</span> run(port, password)</span><br><span class="line">		<span class="keyword">if</span> udp &#123;</span><br><span class="line">			<span class="keyword">go</span> runUDP(port, password)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> managerAddr != <span class="string">""</span> &#123;</span><br><span class="line">		addr, err := net.ResolveUDPAddr(<span class="string">"udp"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Can't resolve address: "</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		conn, err := net.ListenUDP(<span class="string">"udp"</span>, addr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Error listening:"</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">"manager listening udp addr %v ...\n"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">defer</span> conn.Close()</span><br><span class="line">		<span class="keyword">go</span> managerDaemon(conn)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	waitSignal()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>从以上代码中可以看到，server端main函数大体也分成三个部分，第一个部分负责处理一系列的配置文件解析，参数校验等。第二部分处理连接请求。第三部分为对server启动后进行的实时线上管理进行操作。</p>
-<h2 id="参数解析"><a href="#参数解析" class="headerlink" title="参数解析"></a>参数解析</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">   flag.BoolVar(&amp;printVer, <span class="string">"version"</span>, <span class="literal">false</span>, <span class="string">"print version"</span>)</span><br><span class="line">flag.StringVar(&amp;configFile, <span class="string">"c"</span>, <span class="string">"config.json"</span>, <span class="string">"specify config file"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Password, <span class="string">"k"</span>, <span class="string">""</span>, <span class="string">"password"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.ServerPort, <span class="string">"p"</span>, <span class="number">0</span>, <span class="string">"server port"</span>)</span><br><span class="line">flag.IntVar(&amp;cmdConfig.Timeout, <span class="string">"t"</span>, <span class="number">300</span>, <span class="string">"timeout in seconds"</span>)</span><br><span class="line">flag.StringVar(&amp;cmdConfig.Method, <span class="string">"m"</span>, <span class="string">""</span>, <span class="string">"encryption method, default: aes-256-cfb"</span>)</span><br><span class="line">flag.IntVar(&amp;core, <span class="string">"core"</span>, <span class="number">0</span>, <span class="string">"maximum number of CPU cores to use, default is determinied by Go runtime"</span>)</span><br><span class="line">flag.BoolVar((*<span class="keyword">bool</span>)(&amp;debug), <span class="string">"d"</span>, <span class="literal">false</span>, <span class="string">"print debug message"</span>)</span><br><span class="line">flag.BoolVar((*<span class="keyword">bool</span>)(&amp;sanitizeIps), <span class="string">"A"</span>, <span class="literal">false</span>, <span class="string">"anonymize client ip addresses in all output"</span>)</span><br><span class="line">flag.BoolVar(&amp;udp, <span class="string">"u"</span>, <span class="literal">false</span>, <span class="string">"UDP Relay"</span>)</span><br><span class="line">flag.StringVar(&amp;managerAddr, <span class="string">"manager-address"</span>, <span class="string">""</span>, <span class="string">"shadowsocks manager listening address"</span>)</span><br><span class="line">flag.Parse()</span><br></pre></td></tr></table></figure>
-<p>这一部分个人感觉其实没什么，设置项目基本和local端保持一致。其中对于c pu的设置这里需要提一下，这是对于goroutine的设置，表示对于go逻辑处理器的分配。以及增加对于server运行时的管理设置。</p>
-<h2 id="处理连接请求"><a href="#处理连接请求" class="headerlink" title="处理连接请求"></a>处理连接请求</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> port, password := <span class="keyword">range</span> config.PortPassword &#123;</span><br><span class="line">		<span class="keyword">go</span> run(port, password)</span><br><span class="line">		<span class="keyword">if</span> udp &#123;</span><br><span class="line">			<span class="keyword">go</span> runUDP(port, password)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-<p>正如代码1-6行所示，根据配置的情况，server会处理多个端口的请求。由于支持了udp的socks代理加入udp判断，如果设置了udp转发，则进行udp的代理。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">func run(port, password string) &#123;</span><br><span class="line">	ln, err := net.Listen(&quot;tcp&quot;, &quot;:&quot;+port)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		log.Printf(&quot;error listening port %v: %v\n&quot;, port, err)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">	passwdManager.add(port, password, ln)</span><br><span class="line">	var cipher *ss.Cipher</span><br><span class="line">	log.Printf(&quot;server listening port %v ...\n&quot;, port)</span><br><span class="line">	for &#123;</span><br><span class="line">		conn, err := ln.Accept()</span><br><span class="line">		if err != nil &#123;</span><br><span class="line">			// listener maybe closed to update password</span><br><span class="line">			debug.Printf(&quot;accept error: %v\n&quot;, err)</span><br><span class="line">			return</span><br><span class="line">		&#125;</span><br><span class="line">		// Creating cipher upon first connection.</span><br><span class="line">		if cipher == nil &#123;</span><br><span class="line">			log.Println(&quot;creating cipher for port:&quot;, port)</span><br><span class="line">			cipher, err = ss.NewCipher(config.Method, password)</span><br><span class="line">			if err != nil &#123;</span><br><span class="line">				log.Printf(&quot;Error generating cipher for port: %s %v\n&quot;, port, err)</span><br><span class="line">				conn.Close()</span><br><span class="line">				continue</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		go handleConnection(ss.NewConn(conn, cipher.Copy()), port)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>run()函数主要负责监听本地接口等待连接，随后启动一个goroutine 来执行handleConnection()处理到来的连接请求。</p>
-<h3 id="handleConnection"><a href="#handleConnection" class="headerlink" title="handleConnection"></a>handleConnection</h3><p>server对于请求的处理流程与local几乎相同，除了记录的日志信息不同。首先获取请求的目标地址，然后进行连接请求，最后创建两个PipeThenClose进行上行下行数据的传输，同时进行对数据的解密操作。整体流程如下：</p>
-<div id="flowchart-0" class="flow-chart"></div>
-
-<h2 id="manager"><a href="#manager" class="headerlink" title="manager"></a>manager</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> managerAddr != <span class="string">""</span> &#123;</span><br><span class="line">		addr, err := net.ResolveUDPAddr(<span class="string">"udp"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Can't resolve address: "</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		conn, err := net.ListenUDP(<span class="string">"udp"</span>, addr)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			fmt.Fprintln(os.Stderr, <span class="string">"Error listening:"</span>, err)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">"manager listening udp addr %v ...\n"</span>, managerAddr)</span><br><span class="line">		<span class="keyword">defer</span> conn.Close()</span><br><span class="line">		<span class="keyword">go</span> managerDaemon(conn)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-<p>对于shadowsocks的管理如果进行了设置，则会使用一个goroutine执行managerDaemon（）进行守护相关端口的监听，返回shadowsocks的运行情况。其中包括其流量连接情况：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> _, addr := <span class="keyword">range</span> reportconnSet &#123;</span><br><span class="line">					res := reportStat()</span><br><span class="line">					<span class="keyword">if</span> <span class="built_in">len</span>(res) == <span class="number">0</span> &#123;</span><br><span class="line">						<span class="keyword">continue</span></span><br><span class="line">					&#125;</span><br><span class="line">					conn.WriteToUDP(res, addr)</span><br><span class="line">				&#125;</span><br></pre></td></tr></table></figure></p>
-<p>可以使用的管理命令包括增加端口，删除端口，ping远程地址，停止ping等。相关代码如下：<br><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">switch</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"add:"</span>):</span><br><span class="line">			res = handleAddPort(bytes.Trim(data[<span class="number">4</span>:], <span class="string">"\x00\r\n "</span>))</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"remove:"</span>):</span><br><span class="line">			res = handleRemovePort(bytes.Trim(data[<span class="number">7</span>:], <span class="string">"\x00\r\n "</span>))</span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"ping"</span>):</span><br><span class="line">			conn.WriteToUDP(handlePing(), remote)</span><br><span class="line">			reportconnSet[remote.String()] = remote <span class="comment">// append the host into the report list</span></span><br><span class="line">		<span class="keyword">case</span> strings.HasPrefix(command, <span class="string">"ping-stop"</span>): <span class="comment">// add the stop ping command</span></span><br><span class="line">			conn.WriteToUDP(handlePing(), remote)</span><br><span class="line">			<span class="built_in">delete</span>(reportconnSet, remote.String())</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure></p>
-<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>在main函数的最后，设置了一个waitSignal()用来等待Signal信号从而进行程序结束�前的收尾操作，当捕捉到该信号后进行updatePasswd等收尾操作。<br>至此整个shadowsocks的源码，大体上就分析完了。由于想基于一种全局的观点，所以一些极其细节的代码没有去阅读，重点其实还是在理解go语言在实际项目中的一些应用。<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js"></script><textarea id="flowchart-0-code" style="display: none">st=>start: 开始
-op1=>operation: getRequest()获取请求目标地址
-op2=>operation: net.Dial()请求目标地址建立连接
-op3=>operation: ss.PipeThenClose()创建goroutine将数据发送到目的地
-op4=>operation: ss.PipeThenClost()将将目的地的返回数据写入请求端
-ed=>end: 结束
-st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/04/01/go版本shadowsocks源码-终章/" data-id="cjyshtzqq0007kz2xd6l95acw" class="article-share-link">分享</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/源码/">源码</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-  
 
 
   <nav id="page-nav">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">next &raquo;</a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">next &raquo;</a>
   </nav>
 </section>
         
@@ -1068,9 +1124,9 @@ st->op1->op2->op3->op4->ed</textarea><textarea id="flowchart-0-options" style="d
     <h2 class="author"></h2>
     <h3 class="description"></h3>
     <div class="count-box">
-      <a href="/archives"><div><strong>20</strong><br>文章</div></a>
+      <a href="/archives"><div><strong>21</strong><br>文章</div></a>
       <a href="/categories"><div><strong>7</strong><br>分类</div></a>
-      <a href="/tags"><div><strong>12</strong><br>标签</div></a>
+      <a href="/tags"><div><strong>13</strong><br>标签</div></a>
     </div>
 
 
